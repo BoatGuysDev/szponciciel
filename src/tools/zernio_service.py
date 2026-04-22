@@ -12,7 +12,12 @@ client = Zernio()
 @tool
 def upload_tiktok_video(filename: str, caption: str, account_id: str) -> str:
     """
-    Upload a video file and a caption to TikTok social platform via Zernio API.
+    Post a video to TikTok.
+
+    Args:
+        filename: Local path to the video file (must be .mp4)
+        caption: Text caption for the post
+        account_id: TikTok account ID to post to
     """
 
     try:
