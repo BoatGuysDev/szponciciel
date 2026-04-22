@@ -1,9 +1,11 @@
 import requests
 import os
 
+from dotenv import load_dotenv
 from zernio import Zernio, ZernioAPIError
 from langchain.tools import tool
 
+load_dotenv()
 client = Zernio()
 
 
@@ -45,13 +47,9 @@ def upload_tiktok_video(filename: str, caption: str, account_id: str) -> str:
 
 
 if __name__ == "__main__":
-    from dotenv import load_dotenv
-
-    load_dotenv()
-
-    filename = "result_optimized.mp4"
-    caption = "Check out my new video!"
-    account_id = os.getenv("GROUN_TRUTH_MEDIA_ACCOUNT_ID")
+    filename = "path/to/your/video.mp4"
+    caption = "Caption"
+    account_id = os.getenv("GROUND_TRUTH_MEDIA_ACCOUNT_ID")
 
     result = upload_tiktok_video(filename, caption, account_id)
     print(result)
