@@ -1,5 +1,6 @@
 import requests
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 from zernio import Zernio, ZernioAPIError
@@ -30,13 +31,17 @@ def upload_tiktok_video(filename: str, caption: str, account_id: str) -> str:
     upload_url = presigned_result["uploadUrl"]
     public_url = presigned_result["publicUrl"]
 
-    with open(filename, "rb") as f:
-        try:
-            requests.put(
-                upload_url, data=f.read(), headers={"Content-Type": "video/mp4"}
-            )
-        except requests.HTTPError as e:
-            return f"Failed to upload video: {e}"
+    path = Path(filename)
+    if not path.exists():
+        return f"File not found: {filename}"
+
+    with path.open("rb") as f:
+        upload_video_response = requests.put(
+            upload_url, data=f.read(), headers={"Content-Type": "video/mp4"}
+        )
+
+    if not upload_video_response.ok:
+        return f"Failed to upload video: {upload_video_response.text}"
 
     try:
         result = client.posts.create(
