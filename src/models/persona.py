@@ -16,4 +16,4 @@ class Persona(SQLModel, table=True):
     show_captions: bool = True
     real_news_ratio: float = 0.5
     is_active: bool = True
-    created_at: datetime = Field(default_factory=datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

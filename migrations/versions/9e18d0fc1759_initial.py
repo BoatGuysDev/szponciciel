@@ -10,7 +10,6 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "9e18d0fc1759"
@@ -63,6 +62,7 @@ def upgrade() -> None:
         sa.Column("output_video_path", sa.String(), nullable=True),
         sa.Column("tiktok_post_id", sa.String(), nullable=True),
         sa.Column("error_message", sa.String(), nullable=True),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("started_at", sa.DateTime(), nullable=True),
         sa.Column("completed_at", sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(
