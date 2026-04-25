@@ -2,3 +2,7 @@
 
 test.py
 test.ipynb
+
+# Downloaded stock videos
+media/**/*.mp4
+media/**/*.mov
