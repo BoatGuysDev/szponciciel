@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
@@ -6,7 +7,8 @@ from urllib.parse import urlparse
 import requests
 from tqdm import tqdm
 
-OUTPUT = Path(__file__).resolve().parent.parent / "media"
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+OUTPUT = Path(os.environ.get("MEDIA_ROOT", _PROJECT_ROOT / "media"))
 
 VIDEOS: dict[str, list[str]] = {
     "satisfying": [
