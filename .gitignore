@@ -2,3 +2,10 @@
 
 test.py
 test.ipynb
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Downloaded stock videos
+media/**/*.mp4
