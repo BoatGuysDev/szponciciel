@@ -1,7 +1,8 @@
 import random
 from pathlib import Path
 
-_MEDIA_ROOT = Path(__file__).resolve().parent.parent.parent / "media"
+from src.config import MEDIA_ROOT
+from src.providers.video_provider import VideoRequest
 
 VALID_CATEGORIES: frozenset[str] = frozenset(
     {
@@ -18,16 +19,16 @@ VALID_CATEGORIES: frozenset[str] = frozenset(
 
 
 class StockVideoProvider:
-    def __init__(self, root: Path = _MEDIA_ROOT) -> None:
+    def __init__(self, root: Path = MEDIA_ROOT) -> None:
         self.root = root
 
-    def get_video(self, category: str) -> Path:
-        folder = self.root / category
-        if not folder.exists():
-            raise FileNotFoundError(
-                f"Video category folder not found: {folder}. "
+    def get_video(self, request: VideoRequest) -> Path:
+        if request.category not in VALID_CATEGORIES:
+            raise ValueError(
+                f"Invalid category: {request.category!r}. "
                 f"Valid categories: {sorted(VALID_CATEGORIES)}"
             )
+        folder = self.root / request.category
         videos = list(folder.glob("*.mp4"))
         if not videos:
             raise FileNotFoundError(
