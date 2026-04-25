@@ -26,7 +26,6 @@ def _db_url() -> str:
 def _render_item(type_, obj, autogen_context):
     """Render SQLModel AutoString as plain sa.String() in migration files."""
     if type_ == "type" and isinstance(obj, sqlmodel.sql.sqltypes.AutoString):
-        autogen_context.imports.add("import sqlalchemy as sa")
         return "sa.String()"
     return False
 
