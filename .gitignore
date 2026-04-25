@@ -2,6 +2,7 @@
 
 test.py
 test.ipynb
+*.db
 
 # Python cache
 __pycache__/
