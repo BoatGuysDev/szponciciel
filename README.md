@@ -17,6 +17,26 @@ Build a fully automated, self-improving TikTok content factory that:
 - Publishes to multiple TikTok accounts via Zernio
 - Collects performance metrics and feeds them back into the pipeline to optimize future content
 
+## Setup
+
+**Prerequisites:** Python 3.13+, [uv](https://docs.astral.sh/uv/)
+
+```bash
+# 1. Install dependencies
+uv sync
+
+# 2. Configure environment
+cp .env.example .env
+# Fill in ZERNIO_API_KEY, GROUND_TRUTH_MEDIA_ACCOUNT_ID, and optionally DB_PATH
+
+# 3. Apply database migrations
+uv run alembic upgrade head
+
+# 4. Seed the database (first run only)
+#    Edit src/db/seeds/personas.py to define your personas, then run:
+uv run python -m src.db.seed
+```
+
 ## Agent Workflow
 
 ```
