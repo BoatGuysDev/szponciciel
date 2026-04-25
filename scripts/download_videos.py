@@ -114,11 +114,11 @@ VIDEOS: dict[str, list[str]] = {
 }
 
 
-def download_file(url: str, dest: Path) -> None:
+def download_file(url: str, dest: Path, session: requests.Session) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(".part")
     try:
-        with requests.get(url, stream=True, timeout=60) as r:
+        with session.get(url, stream=True, timeout=60) as r:
             r.raise_for_status()
             total = int(r.headers.get("content-length", 0))
             with (
@@ -156,28 +156,29 @@ def main() -> None:
 
     skipped = fetched = failed = 0
 
-    for category, urls in VIDEOS.items():
-        for url in urls:
-            dest = OUTPUT / category / Path(urlparse(url).path).name
+    with requests.Session() as session:
+        for category, urls in VIDEOS.items():
+            for url in urls:
+                dest = OUTPUT / category / Path(urlparse(url).path).name
 
-            if dest.exists():
-                print(f"  skip  {dest.relative_to(OUTPUT)}  (already exists)")
-                skipped += 1
-                continue
+                if dest.exists():
+                    print(f"  skip  {dest.relative_to(OUTPUT)}  (already exists)")
+                    skipped += 1
+                    continue
 
-            print(f"  fetch {dest.relative_to(OUTPUT)}")
-            print(f"        {url}")
+                print(f"  fetch {dest.relative_to(OUTPUT)}")
+                print(f"        {url}")
 
-            if args.dry_run:
-                fetched += 1
-                continue
+                if args.dry_run:
+                    fetched += 1
+                    continue
 
-            try:
-                download_file(url, dest)
-                fetched += 1
-            except Exception as exc:
-                print(f"  ERROR: {exc}", file=sys.stderr)
-                failed += 1
+                try:
+                    download_file(url, dest, session)
+                    fetched += 1
+                except Exception as exc:
+                    print(f"  ERROR: {exc}", file=sys.stderr)
+                    failed += 1
 
     print()
     label = "would fetch" if args.dry_run else "downloaded"
