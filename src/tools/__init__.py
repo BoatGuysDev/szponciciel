@@ -1,3 +1,3 @@
-from .zernio_service import upload_tiktok_video
+from .tiktok import tiktok_upload_video
 
-__all__ = ["upload_tiktok_video"]
+__all__ = ["tiktok_upload_video"]
