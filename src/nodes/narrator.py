@@ -30,10 +30,17 @@ def narrator_node(state: PersonaRunState) -> dict[str, str | bool]:
                 "error_message": f"Persona with id {state['persona_id']} not found.",
             }
 
+    if not all([run.base_script, persona.language, persona.style, persona.tone]):
+        return {
+            "is_fatal_error": True,
+            "error_message": "Missing required information to create narration.",
+        }
+
     agent = create_agent(
         model=ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite"),
         system_prompt=NARRATOR_SYSTEM_PROMPT,
     )
+
     prompt = f"""
         Create a narration for the following script: {run.base_script}
 
