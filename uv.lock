@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.13"
 
 [[package]]
@@ -678,6 +678,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "alembic" },
     { name = "langchain" },
+    { name = "langgraph" },
     { name = "python-dotenv" },
     { name = "requests" },
     { name = "sqlmodel" },
@@ -689,6 +690,7 @@ dependencies = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.18.4" },
     { name = "langchain", specifier = ">=1.2.15" },
+    { name = "langgraph", specifier = ">=1.1.9" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "requests", specifier = ">=2.32" },
     { name = "sqlmodel", specifier = ">=0.0.38" },
