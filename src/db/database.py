@@ -4,6 +4,7 @@ from pathlib import Path
 
 from sqlalchemy import Engine
 from sqlmodel import Session, SQLModel, create_engine
+from sqlalchemy.pool import StaticPool
 
 from src.models import Persona, PersonaRun, Run  # noqa: F401
 
@@ -20,6 +21,17 @@ def get_engine() -> Engine:
             connect_args={"check_same_thread": False},
         )
     return _engine
+
+
+def get_test_engine() -> Engine:
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    SQLModel.metadata.create_all(engine)
+
+    return engine
 
 
 def init_db() -> None:
