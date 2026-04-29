@@ -16,8 +16,8 @@ load_dotenv()
 def get_engine() -> Engine:
     global _engine
     if _engine is None:
-        mode = os.getenv("MODE", "development")
-        if mode == "test":
+        run_mode = os.getenv("RUN_MODE", "development")
+        if run_mode == "test":
             db_path = ""
         else:
             db_path = Path("/", os.getenv("DB_PATH", "szponciciel.db"))
