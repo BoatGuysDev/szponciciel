@@ -18,12 +18,12 @@ def get_engine() -> Engine:
     if _engine is None:
         run_mode = os.getenv("RUN_MODE", "development")
         if run_mode == "test":
-            db_path = ""
+            db_path = Path(":memory:")
         else:
-            db_path = Path("/", os.getenv("DB_PATH", "szponciciel.db"))
+            db_path = Path(os.getenv("DB_PATH", "szponciciel.db"))
 
         _engine = create_engine(
-            f"sqlite://{db_path}",
+            f"sqlite:///{db_path}",
             echo=False,
             connect_args={"check_same_thread": False},
         )

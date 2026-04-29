@@ -33,13 +33,13 @@ gcloud init
 # 3. Create local authentication credentials
 gcloud auth application-default login
 
-# 3. Configure environment
+# 4. Configure environment
 cp .env.example .env
 
-# 4. Apply database migrations
+# 5. Apply database migrations
 uv run alembic upgrade head
 
-# 5. Seed the database (first run only)
+# 6. Seed the database (first run only)
 uv run python -m src.db.seed
 ```
 
