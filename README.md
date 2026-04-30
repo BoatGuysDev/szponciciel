@@ -19,21 +19,32 @@ Build a fully automated, self-improving TikTok content factory that:
 
 ## Setup
 
-**Prerequisites:** Python 3.13+, [uv](https://docs.astral.sh/uv/)
+**Prerequisites:**
+- Python 3.13+, [uv](https://docs.astral.sh/uv/)
+- Google Cloud CLI, [gcloud](https://docs.cloud.google.com/sdk/docs/install-sdk)
 
 ```bash
 # 1. Install dependencies
 uv sync
 
-# 2. Configure environment
+# 2. Initialize Google Cloud CLI
+gcloud init
+
+# 3. Create local authentication credentials
+gcloud auth application-default login
+
+# 4. Configure environment
 cp .env.example .env
 
-# 3. Apply database migrations
+# 5. Apply database migrations
 uv run alembic upgrade head
 
-# 4. Seed the database (first run only)
+# 6. Seed the database (first run only)
 uv run python -m src.db.seed
 ```
+
+**Additional guides:**
+- [Configure application default credentials - Google Cloud CLI](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/start/gcp-auth)
 
 ## Agent Workflow
 

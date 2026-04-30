@@ -1,5 +1,4 @@
 import requests
-import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -11,7 +10,7 @@ client = Zernio()
 
 
 @tool
-def upload_tiktok_video(filename: str, caption: str, account_id: str) -> str:
+def tiktok_upload_video(filename: str, caption: str, account_id: str) -> str:
     """
     Post a video to TikTok.
 
@@ -54,12 +53,3 @@ def upload_tiktok_video(filename: str, caption: str, account_id: str) -> str:
         return f"Failed to create post: {e}"
 
     return f"Video uploaded successfully! Post ID: {result.post.field_id}"
-
-
-if __name__ == "__main__":
-    filename = "path/to/your/video.mp4"
-    caption = "Caption"
-    account_id = os.getenv("GROUND_TRUTH_MEDIA_ACCOUNT_ID")
-
-    result = upload_tiktok_video(filename, caption, account_id)
-    print(result)
