@@ -16,6 +16,9 @@ on:
 permissions:
     contents: read
 
+env:
+    RUN_MODE: test
+
 jobs:
   test:
     runs-on: ubuntu-latest
