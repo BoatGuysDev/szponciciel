@@ -197,7 +197,7 @@ class TestNarratorNode(BaseTestClass):
             session.commit()
 
             with (
-                patch("src.nodes.narrator.create_agent", return_value=mock_agent),
+                patch("src.nodes.narrator_node.create_agent", return_value=mock_agent),
             ):
                 result = graph.compile().invoke(
                     {
