@@ -12,9 +12,7 @@ from .state import PersonaRunState
 load_dotenv()
 
 device = os.getenv("COMPUTE_DEVICE", "cpu")
-tts = TTS(
-    model_name="tts_models/multilingual/multi-dataset/xtts_v2", progress_bar=True
-).to(device)
+_tts: TTS | None = None
 
 
 def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
@@ -52,8 +50,15 @@ def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
             persona.voice_speaker
         )  # If None, the TTS model will choose a default speaker for the language
 
+    global _tts
+    if _tts is None:
+        _tts = TTS(
+            model_name="tts_models/multilingual/multi-dataset/xtts_v2",
+            progress_bar=True,
+        ).to(device)
+
     try:
-        tts.tts_to_file(**kwargs)
+        _tts.tts_to_file(**kwargs)
     except Exception as e:
         out_path.parent.rmdir()
         return {

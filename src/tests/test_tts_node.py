@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from langgraph.graph import StateGraph, START, END
 from sqlmodel import Session
 from sqlalchemy import Engine
@@ -25,12 +25,9 @@ class TestTtsNode(BaseTestClass):
 
     @pytest.fixture(autouse=True)
     def mock_tts(self):
-        with patch("src.nodes.tts_node.TTS") as mock_tts_class:
-            mock_tts_instance = MagicMock()
-            mock_tts_class.return_value.to.return_value = mock_tts_instance
+        with patch("src.nodes.tts_node._tts") as mock_tts_instance:
             self.mock_tts_instance = mock_tts_instance
-
-            yield mock_tts_class
+            yield mock_tts_instance
 
     def _seed_persona(self, engine: Engine, **kwargs):
         defaults = {
