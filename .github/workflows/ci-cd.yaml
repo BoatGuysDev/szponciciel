@@ -6,11 +6,9 @@ on:
         types: [ opened, synchronize, reopened ]
         paths-ignore:
             - '.env.example'
+            - '.gitignore'
             - '**.md'
-            - '**.lock'
-            - '**.toml'
             - '.claude/**'
-            - '.github/**'
             - 'migrations/**'
 
 permissions:

@@ -115,9 +115,9 @@ with (
 
 | Variable | Purpose | Required |
 |---|---|---|
-| `DB_PATH` | Path to SQLite file (default: `szponciciel.db`) | Yes
+| `DB_PATH` | Path to SQLite file (default: `szponciciel.db`) | Yes |
 | `RUN_MODE` | `test` → in-memory DB; omit for development | No (defaults to `development`) |
-| `ZERNIO_API_KEY` | API key for Zernio upload | Yes
-| `GOOGLE_GENAI_USE_VERTEXAI` | `true` / `false`for using Vertex AI | Yes
-| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID | Yes
+| `ZERNIO_API_KEY` | API key for Zernio upload | Yes |
+| `GOOGLE_GENAI_USE_VERTEXAI` | `true` / `false`for using Vertex AI | Yes |
+| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID | Yes |
 | `COMPUTE_DEVICE` | `cpu` / `cuda` / `mps` for Coqui TTS | No (defaults to `cpu`) |
