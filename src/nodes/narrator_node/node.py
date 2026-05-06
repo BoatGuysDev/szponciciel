@@ -6,8 +6,9 @@ from langchain.messages import HumanMessage
 
 from src.db import get_engine
 from src.models import Run, Persona
-from src.prompts import NARRATOR_SYSTEM_PROMPT
-from .state import PersonaRunState
+
+from .system_prompt import NARRATOR_SYSTEM_PROMPT
+from ..state import PersonaRunState
 
 
 def narrator_node(state: PersonaRunState) -> dict[str, str | bool]:

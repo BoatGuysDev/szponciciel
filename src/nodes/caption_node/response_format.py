@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 
-class CaptionAgentOutput(BaseModel):
+class CaptionAgentResponseFormat(BaseModel):
     """Expected output format from the caption generation agent."""
 
     tiktok_caption: str = Field(description="The generated TikTok caption.")

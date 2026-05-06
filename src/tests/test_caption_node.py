@@ -6,7 +6,7 @@ from sqlalchemy import Engine
 
 from src.nodes import caption_node, PersonaRunState
 from src.models import Persona
-from src.schemas import CaptionAgentOutput
+from src.nodes.caption_node.response_format import CaptionAgentResponseFormat
 
 from .base_test_class import BaseTestClass
 
@@ -35,7 +35,7 @@ class TestCaptionNode(BaseTestClass):
         return Persona(**defaults)
 
     def _mock_agent(self, caption: str, hashtags: list[str]) -> MagicMock:
-        structured_response = CaptionAgentOutput(
+        structured_response = CaptionAgentResponseFormat(
             tiktok_caption=caption, hashtags=hashtags
         )
         mock = MagicMock()
@@ -129,8 +129,10 @@ class TestCaptionNode(BaseTestClass):
             session.commit()
 
             with (
-                patch("src.nodes.caption_node.ChatGoogleGenerativeAI"),
-                patch("src.nodes.caption_node.create_agent", return_value=mock_agent),
+                patch("src.nodes.caption_node.node.ChatGoogleGenerativeAI"),
+                patch(
+                    "src.nodes.caption_node.node.create_agent", return_value=mock_agent
+                ),
             ):
                 result = graph.compile().invoke(
                     {"persona_id": "1", "narration": "Some narration text."}
@@ -152,8 +154,10 @@ class TestCaptionNode(BaseTestClass):
             session.commit()
 
             with (
-                patch("src.nodes.caption_node.ChatGoogleGenerativeAI"),
-                patch("src.nodes.caption_node.create_agent", return_value=mock_agent),
+                patch("src.nodes.caption_node.node.ChatGoogleGenerativeAI"),
+                patch(
+                    "src.nodes.caption_node.node.create_agent", return_value=mock_agent
+                ),
             ):
                 result = graph.compile().invoke(
                     {"persona_id": "1", "narration": "Some narration text."}

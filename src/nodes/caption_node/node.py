@@ -6,9 +6,10 @@ from langchain.messages import HumanMessage
 
 from src.db import get_engine
 from src.models import Persona
-from src.prompts import CAPTION_SYSTEM_PROMPT
-from src.schemas import CaptionAgentOutput
-from .state import PersonaRunState
+from .response_format import CaptionAgentResponseFormat
+
+from .system_prompt import CAPTION_SYSTEM_PROMPT
+from ..state import PersonaRunState
 
 
 def caption_node(state: PersonaRunState) -> dict:
@@ -33,7 +34,7 @@ def caption_node(state: PersonaRunState) -> dict:
     agent = create_agent(
         model=ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite"),
         system_prompt=CAPTION_SYSTEM_PROMPT,
-        response_format=CaptionAgentOutput,
+        response_format=CaptionAgentResponseFormat,
     )
 
     prompt = f"""
