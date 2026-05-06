@@ -1,4 +1,5 @@
 import os
+import json
 from sqlmodel import select, Session
 
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -46,9 +47,21 @@ def caption_node(state: PersonaRunState) -> dict:
 
     response = agent.invoke({"messages": [HumanMessage(content=prompt)]})
 
-    output = response["structured_response"]
-    caption = output.tiktok_caption[:2200]
-    hashtags = output.hashtags
+    output = response.get("structured_response")
+    if not output:
+        try:
+            result = json.loads(response["messages"][-1].content)
+        except json.JSONDecodeError:
+            return {
+                "is_fatal_error": True,
+                "error_message": "Failed to parse agent response.",
+            }
+
+        caption = result.get("caption", "")[:2200]
+        hashtags = result.get("hashtags", [])
+    else:
+        caption = output.caption[:2200]
+        hashtags = output.hashtags
 
     return {
         "tiktok_caption": caption,

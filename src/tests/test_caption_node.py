@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from unittest.mock import patch, MagicMock
 from langgraph.graph import StateGraph, START, END
@@ -34,12 +36,24 @@ class TestCaptionNode(BaseTestClass):
         defaults.update(kwargs)
         return Persona(**defaults)
 
-    def _mock_agent(self, caption: str, hashtags: list[str]) -> MagicMock:
+    def _mock_agent(
+        self, caption: str, hashtags: list[str], formatted_output: bool = True
+    ) -> MagicMock:
         structured_response = CaptionAgentResponseFormat(
-            tiktok_caption=caption, hashtags=hashtags
+            caption=caption, hashtags=hashtags
         )
         mock = MagicMock()
-        mock.invoke.return_value = {"structured_response": structured_response}
+        mock.invoke.return_value = (
+            {"structured_response": structured_response}
+            if formatted_output
+            else {
+                "messages": [
+                    MagicMock(
+                        content=json.dumps({"caption": caption, "hashtags": hashtags})
+                    )
+                ]
+            }
+        )
         return mock
 
     def test_missing_persona(self, graph: StateGraph):
@@ -117,12 +131,42 @@ class TestCaptionNode(BaseTestClass):
             result["error_message"] == "Missing required information to create caption."
         )
 
-    def test_successful_caption(self, graph: StateGraph, engine: Engine):
+    def test_successful_caption_structured(self, graph: StateGraph, engine: Engine):
+        """Mocked LLM returns valid structured response; result contains tiktok_caption and hashtags."""
+
+        expected_caption = "Breaking news just dropped."
+        expected_hashtags = ["#news", "#breaking", "#today", "#viral", "#trending"]
+        mock_agent = self._mock_agent(
+            expected_caption, expected_hashtags, formatted_output=True
+        )
+
+        with Session(engine) as session:
+            session.add(self._make_persona())
+            session.commit()
+
+            with (
+                patch("src.nodes.caption_node.node.ChatGoogleGenerativeAI"),
+                patch(
+                    "src.nodes.caption_node.node.create_agent", return_value=mock_agent
+                ),
+            ):
+                result = graph.compile().invoke(
+                    {"persona_id": "1", "narration": "Some narration text."}
+                )
+
+        assert result.get("is_fatal_error") is None
+        assert result.get("error_message") is None
+        assert result["tiktok_caption"] == expected_caption
+        assert result["hashtags"] == expected_hashtags
+
+    def test_successful_caption_json(self, graph: StateGraph, engine: Engine):
         """Mocked LLM returns valid JSON; result contains tiktok_caption and hashtags."""
 
         expected_caption = "Breaking news just dropped."
         expected_hashtags = ["#news", "#breaking", "#today", "#viral", "#trending"]
-        mock_agent = self._mock_agent(expected_caption, expected_hashtags)
+        mock_agent = self._mock_agent(
+            expected_caption, expected_hashtags, formatted_output=False
+        )
 
         with Session(engine) as session:
             session.add(self._make_persona())
