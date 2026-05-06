@@ -1,3 +1,4 @@
+import os
 from sqlmodel import select, Session
 
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -32,7 +33,7 @@ def caption_node(state: PersonaRunState) -> dict:
         }
 
     agent = create_agent(
-        model=ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite"),
+        model=ChatGoogleGenerativeAI(model=os.getenv("MODEL", "gemini-2.5-flash-lite")),
         system_prompt=CAPTION_SYSTEM_PROMPT,
         response_format=CaptionAgentResponseFormat,
     )

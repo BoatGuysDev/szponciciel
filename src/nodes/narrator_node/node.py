@@ -1,3 +1,4 @@
+import os
 from sqlmodel import select, Session
 
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -38,7 +39,7 @@ def narrator_node(state: PersonaRunState) -> dict[str, str | bool]:
         }
 
     agent = create_agent(
-        model=ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite"),
+        model=ChatGoogleGenerativeAI(model=os.getenv("MODEL", "gemini-2.5-flash-lite")),
         system_prompt=NARRATOR_SYSTEM_PROMPT,
     )
 
