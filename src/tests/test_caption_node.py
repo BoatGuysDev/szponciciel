@@ -131,6 +131,33 @@ class TestCaptionNode(BaseTestClass):
             result["error_message"] == "Missing required information to create caption."
         )
 
+    def test_malformed_caption_json(self, graph: StateGraph, engine: Engine):
+        """Mocked LLM returns malformed JSON"""
+
+        expected_caption = "Breaking news just dropped."
+        expected_hashtags = ["#news", "#breaking", "#today", "#viral", "#trending"]
+
+        mock_agent = MagicMock()
+        content = expected_caption + " " + " ".join(expected_hashtags)
+        mock_agent.invoke.return_value = {"messages": [MagicMock(content=content)]}
+
+        with Session(engine) as session:
+            session.add(self._make_persona())
+            session.commit()
+
+            with (
+                patch("src.nodes.caption_node.node.ChatGoogleGenerativeAI"),
+                patch(
+                    "src.nodes.caption_node.node.create_agent", return_value=mock_agent
+                ),
+            ):
+                result = graph.compile().invoke(
+                    {"persona_id": "1", "narration": "Some narration text."}
+                )
+
+        assert result["is_fatal_error"]
+        assert result["error_message"] == "Failed to parse agent response."
+
     def test_successful_caption_structured(self, graph: StateGraph, engine: Engine):
         """Mocked LLM returns valid structured response; result contains tiktok_caption and hashtags."""
 
