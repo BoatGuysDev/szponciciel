@@ -2,7 +2,6 @@ import logging
 import os
 from typing import TypedDict
 
-from pydantic import ValidationError
 from sqlmodel import select, Session
 
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -77,29 +76,13 @@ def caption_node(state: PersonaRunState) -> CaptionResult:
 
     response = agent.invoke({"messages": [HumanMessage(content=prompt)]})
 
-    output = response.get("structured_response")
-    if output:
-        try:
-            parsed_output = CaptionAgentResponseFormat.model_validate(output)
-        except ValidationError as error:
-            log.warning("Invalid structured caption response: %s", error)
-            return {
-                "is_fatal_error": True,
-                "error_message": "Failed to parse agent response.",
-            }
-    else:
-        try:
-            parsed_output = CaptionAgentResponseFormat.model_validate_json(
-                response["messages"][-1].content
-            )
-        # KeyError: missing messages key; IndexError: empty messages;
-        # TypeError/AttributeError: malformed messages entry/content shape.
-        except (ValidationError, KeyError, IndexError, TypeError, AttributeError) as e:
-            log.warning("Caption agent fallback parse failed: %s", e)
-            return {
-                "is_fatal_error": True,
-                "error_message": "Failed to parse agent response.",
-            }
+    parsed_output = response.get("structured_response")
+    if parsed_output is None:
+        log.warning("Caption agent returned no structured response.")
+        return {
+            "is_fatal_error": True,
+            "error_message": "Failed to parse agent response.",
+        }
 
     caption = _truncate_caption(parsed_output.caption)
     hashtags = parsed_output.hashtags
