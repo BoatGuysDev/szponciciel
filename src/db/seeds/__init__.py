@@ -1,3 +1,3 @@
-from db.seeds import personas
+from . import personas
 
 __all__ = ["personas"]
