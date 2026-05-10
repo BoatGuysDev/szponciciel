@@ -9,6 +9,7 @@ from pathlib import Path
 
 from config import COMPUTE_DEVICE, WHISPER_MODEL
 from merge_captions import compose, transcribe_and_align
+from nodes.tts_node import _sanitize_for_tts
 
 TEXT = (
     "Breaking news from Warsaw. Scientists have discovered that cats can accurately "
@@ -29,7 +30,10 @@ tts = TTS(
     model_name="tts_models/multilingual/multi-dataset/xtts_v2", progress_bar=True
 ).to(COMPUTE_DEVICE)
 tts.tts_to_file(
-    text=TEXT, file_path=str(audio_path), language=LANGUAGE, speaker=SPEAKER
+    text=_sanitize_for_tts(TEXT),
+    file_path=str(audio_path),
+    language=LANGUAGE,
+    speaker=SPEAKER,
 )
 
 # --- 2. WhisperX alignment ---
