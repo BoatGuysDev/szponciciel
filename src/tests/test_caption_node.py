@@ -158,6 +158,29 @@ class TestCaptionNode(BaseTestClass):
         assert result["is_fatal_error"]
         assert result["error_message"] == "Failed to parse agent response."
 
+    def test_missing_messages_fallback(self, graph: StateGraph, engine: Engine):
+        """Fatal error when fallback JSON source message is missing."""
+
+        mock_agent = MagicMock()
+        mock_agent.invoke.return_value = {}
+
+        with Session(engine) as session:
+            session.add(self._make_persona())
+            session.commit()
+
+            with (
+                patch("src.nodes.caption_node.node.ChatGoogleGenerativeAI"),
+                patch(
+                    "src.nodes.caption_node.node.create_agent", return_value=mock_agent
+                ),
+            ):
+                result = graph.compile().invoke(
+                    {"persona_id": "1", "narration": "Some narration text."}
+                )
+
+        assert result["is_fatal_error"]
+        assert result["error_message"] == "Failed to parse agent response."
+
     def test_successful_caption_structured(self, graph: StateGraph, engine: Engine):
         """Mocked LLM returns valid structured response; result contains tiktok_caption and hashtags."""
 

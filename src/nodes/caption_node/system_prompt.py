@@ -17,7 +17,9 @@ Given a narration script, a target language, a speaking style, and a tone, write
 Return a single JSON object with exactly two keys. No markdown fences, no extra text — raw JSON only:
 
 {
-  "caption": str,
-  "hashtags": array<'#str'>
+  "caption": "Caption text in the target language.",
+  "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3", "#hashtag4", "#hashtag5"]
 }
+
+Each hashtag must be a string starting with `#`.
 """
