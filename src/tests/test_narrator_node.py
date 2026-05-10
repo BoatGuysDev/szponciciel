@@ -4,10 +4,10 @@ from langgraph.graph import StateGraph, START, END
 from sqlmodel import Session
 from sqlalchemy import Engine
 
-from src.nodes import narrator_node, PersonaRunState
-from src.models import Run, Persona
+from nodes import narrator_node, PersonaRunState
+from models import Run, Persona
 
-from .base_test_class import BaseTestClass
+from tests.base_test_class import BaseTestClass
 
 
 class TestNarratorNode(BaseTestClass):
@@ -197,8 +197,8 @@ class TestNarratorNode(BaseTestClass):
             session.commit()
 
             with (
-                patch("src.nodes.narrator_node.ChatGoogleGenerativeAI"),
-                patch("src.nodes.narrator_node.create_agent", return_value=mock_agent),
+                patch("nodes.narrator_node.ChatGoogleGenerativeAI"),
+                patch("nodes.narrator_node.create_agent", return_value=mock_agent),
             ):
                 result = graph.compile().invoke(
                     {

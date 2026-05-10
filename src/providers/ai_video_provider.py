@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.providers.video_provider import VideoRequest
+from providers.video_provider import VideoRequest
 
 
 class AIVideoProvider:

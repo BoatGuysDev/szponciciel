@@ -1,8 +1,8 @@
 import random
 from pathlib import Path
 
-from src.config import MEDIA_ROOT
-from src.providers.video_provider import VideoRequest
+from config import MEDIA_ROOT
+from providers.video_provider import VideoRequest
 
 VALID_CATEGORIES: frozenset[str] = frozenset(
     {

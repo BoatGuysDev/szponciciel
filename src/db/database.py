@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from sqlalchemy import Engine
 from sqlmodel import Session, SQLModel, create_engine
 
-from src.models import Persona, PersonaRun, Run  # noqa: F401
+from models import Persona, PersonaRun, Run  # noqa: F401
 
 _engine: Engine | None = None
 

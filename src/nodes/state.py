@@ -9,6 +9,7 @@ class PersonaRunState(TypedDict):
     narration: str
     tiktok_caption: str
     hashtags: list[str]
+    word_timings: list[dict]  # each dict: {"text": str, "start": float, "end": float}
     audio_path: str  # runs/{run_id}/{persona_id}/speech.wav
     video_category: str
     background_video_path: str

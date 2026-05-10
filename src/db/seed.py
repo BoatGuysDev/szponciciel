@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 
-from .database import init_db
+from db.database import init_db
 
 
 def seed_all() -> None:
