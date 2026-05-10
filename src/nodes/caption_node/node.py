@@ -18,6 +18,7 @@ from ..state import PersonaRunState
 
 log = logging.getLogger(__name__)
 CAPTION_MAX_CHARS = 2200
+WORD_BOUNDARY_WINDOW = 50
 
 
 class CaptionResult(TypedDict, total=False):
@@ -38,7 +39,7 @@ def _truncate_caption(caption: str) -> str:
     )
     cut = caption[:CAPTION_MAX_CHARS]
     last_space = cut.rfind(" ")
-    if last_space >= CAPTION_MAX_CHARS - 50:
+    if last_space >= CAPTION_MAX_CHARS - WORD_BOUNDARY_WINDOW:
         cut = cut[:last_space]
     return cut.rstrip()
 
@@ -91,6 +92,8 @@ def caption_node(state: PersonaRunState) -> CaptionResult:
             parsed_output = CaptionAgentResponseFormat.model_validate_json(
                 response["messages"][-1].content
             )
+        # KeyError: missing messages key; IndexError: empty messages;
+        # TypeError/AttributeError: malformed messages entry/content shape.
         except (ValidationError, KeyError, IndexError, TypeError, AttributeError) as e:
             log.warning("Caption agent fallback parse failed: %s", e)
             return {
