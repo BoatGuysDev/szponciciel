@@ -1,6 +1,6 @@
 from sqlmodel import Session, SQLModel, col, select
 
-from src.db.database import get_engine
+from db.database import get_engine
 
 
 def seed_records(records: list[SQLModel]) -> int:

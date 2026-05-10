@@ -5,9 +5,9 @@ from sqlmodel import Session, select
 from TTS.api import TTS
 from dotenv import load_dotenv
 
-from src.db import get_engine
-from src.models import Persona
-from ..state import PersonaRunState
+from db import get_engine
+from models import Persona
+from nodes.state import PersonaRunState
 
 load_dotenv()
 

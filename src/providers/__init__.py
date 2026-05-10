@@ -1,6 +1,6 @@
-from .ai_video_provider import AIVideoProvider
-from .stock_video_provider import VALID_CATEGORIES, StockVideoProvider
-from .video_provider import VideoProvider, VideoRequest
+from providers.ai_video_provider import AIVideoProvider
+from providers.stock_video_provider import VALID_CATEGORIES, StockVideoProvider
+from providers.video_provider import VideoProvider, VideoRequest
 
 __all__ = [
     "VideoProvider",

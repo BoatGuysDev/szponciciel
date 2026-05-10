@@ -5,10 +5,10 @@ from langgraph.graph import StateGraph, START, END
 from sqlmodel import Session
 from sqlalchemy import Engine
 
-from src.nodes import tts_node, PersonaRunState
-from src.models import Persona
+from nodes import tts_node, PersonaRunState
+from models import Persona
 
-from .base_test_class import BaseTestClass
+from tests.base_test_class import BaseTestClass
 
 
 class TestTtsNode(BaseTestClass):
@@ -25,7 +25,7 @@ class TestTtsNode(BaseTestClass):
 
     @pytest.fixture(autouse=True)
     def mock_tts(self):
-        with patch("src.nodes.tts_node.node._tts") as mock_tts_instance:
+        with patch("nodes.tts_node.node._tts") as mock_tts_instance:
             self.mock_tts_instance = mock_tts_instance
             yield mock_tts_instance
 

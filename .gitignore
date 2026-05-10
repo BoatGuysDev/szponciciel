@@ -9,6 +9,13 @@ test.ipynb
 __pycache__/
 *.pyc
 .pytest_cache/
+*.egg-info/
 
 # Downloaded stock videos
 media/**/*.mp4
+
+# Generated pipeline outputs (audio, video)
+runs/
+
+# macOS metadata
+.DS_Store
