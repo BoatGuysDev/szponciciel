@@ -32,7 +32,7 @@ Each node in `src/nodes/` accepts `PersonaRunState` and returns a partial state 
 
 ### TTS
 
-`tts_node` uses Coqui TTS (`xtts_v2` multilingual model). Set `COMPUTE_DEVICE=cuda` (or `mps`) for GPU acceleration; defaults to `cpu`. Output is written to `runs/{run_id}/{persona_id}/speech.wav`.
+`tts_node` uses Coqui TTS (`xtts_v2` multilingual model). Set `COMPUTE_DEVICE=cuda` (or `mps`) for GPU acceleration; defaults to `cpu`. `WHISPER_MODEL` sets the WhisperX model size for `align_node`; defaults to `base`. See `docs/karaoke-captions.md` for the full caption pipeline (chunk grouping, rendering, timing model).
 
 ### Database
 

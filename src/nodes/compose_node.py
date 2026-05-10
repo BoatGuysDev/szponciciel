@@ -2,12 +2,11 @@ from pathlib import Path
 
 from merge_captions import Word, compose
 
-from nodes.state import PersonaRunState
+from nodes.state import PersonaRunState, persona_run_dir
 
 
 def compose_node(state: PersonaRunState) -> dict:
-    """Composes background video + audio with karaoke captions and writes output.mp4."""
-    out_path = Path(f"runs/{state['run_id']}/{state['persona_id']}/output.mp4")
+    out_path = persona_run_dir(state) / "output.mp4"
 
     words = [
         Word(text=w["text"], start=w["start"], end=w["end"])

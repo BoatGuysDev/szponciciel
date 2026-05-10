@@ -1,4 +1,9 @@
+from pathlib import Path
 from typing import Literal, TypedDict
+
+
+def persona_run_dir(state: "PersonaRunState") -> Path:
+    return Path("runs") / state["run_id"] / state["persona_id"]
 
 
 class PersonaRunState(TypedDict):

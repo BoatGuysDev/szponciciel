@@ -1,23 +1,21 @@
-import os
+import logging
 
-from pathlib import Path
 from sqlmodel import Session, select
 from TTS.api import TTS
 from dotenv import load_dotenv
 
+from config import COMPUTE_DEVICE
 from db import get_engine
 from models import Persona
-from nodes.state import PersonaRunState
+from nodes.state import PersonaRunState, persona_run_dir
 
 load_dotenv()
 
-device = os.getenv("COMPUTE_DEVICE", "cpu")
+log = logging.getLogger(__name__)
 _tts: TTS | None = None
 
 
 def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
-    """Converts the narration text into speech and saves the audio file."""
-
     if not state["narration"]:
         return {
             "is_fatal_error": True,
@@ -35,7 +33,7 @@ def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
                 "error_message": f"Persona with id {state['persona_id']} not found.",
             }
 
-    out_path = Path(f"runs/{state['run_id']}/{state['persona_id']}/speech.wav")
+    out_path = persona_run_dir(state) / "speech.wav"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     kwargs = {
@@ -55,12 +53,12 @@ def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
         _tts = TTS(
             model_name="tts_models/multilingual/multi-dataset/xtts_v2",
             progress_bar=True,
-        ).to(device)
+        ).to(COMPUTE_DEVICE)
 
     try:
         _tts.tts_to_file(**kwargs)
     except Exception as e:
-        out_path.parent.rmdir()
+        log.exception("TTS generation failed")
         return {
             "is_fatal_error": True,
             "error_message": f"Error during TTS generation: {str(e)}",
