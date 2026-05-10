@@ -7,7 +7,6 @@ from nodes.state import PersonaRunState
 
 
 def align_node(state: PersonaRunState) -> dict:
-    """Runs WhisperX forced alignment on speech.wav and stores word timings in state."""
     audio_path = Path(state["audio_path"])
     if not audio_path.is_file():
         return {

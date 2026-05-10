@@ -16,8 +16,6 @@ class Word:
 
 @dataclass(frozen=True)
 class Chunk:
-    """A group of 2-3 words displayed together."""
-
     words: tuple[Word, ...]
 
     @property
@@ -30,13 +28,12 @@ class Chunk:
 
 
 _whisper_asr: object | None = None
-_whisper_align: dict = {}  # lang -> (align_model, metadata)
+_whisper_align: dict[str, tuple] = {}  # lang -> (align_model, metadata)
 
 
 def transcribe_and_align(
     audio_path: Path, *, device: str, model_size: str
 ) -> list[Word]:
-    """Run WhisperX transcription + forced alignment, return word timings."""
     import whisperx
 
     global _whisper_asr
@@ -79,12 +76,11 @@ def group_words(words: list[Word]) -> list[Chunk]:
 
     chunks: list[Chunk] = []
     current: list[Word] = [words[0]]
+    current_chars = len(words[0].text)
 
     for w in words[1:]:
         gap = w.start - current[-1].end
-        char_count = (
-            sum(len(x.text) for x in current) + len(current) - 1 + 1 + len(w.text)
-        )
+        char_count = current_chars + 1 + len(w.text)
         at_limit = len(current) >= MAX_WORDS_PER_CHUNK
         too_long = char_count > MAX_CHARS_PER_CHUNK
         pause = gap > PAUSE_THRESHOLD_S
@@ -92,8 +88,10 @@ def group_words(words: list[Word]) -> list[Chunk]:
         if at_limit or too_long or pause:
             chunks.append(Chunk(words=tuple(current)))
             current = [w]
+            current_chars = len(w.text)
         else:
             current.append(w)
+            current_chars = char_count
 
     if current:
         chunks.append(Chunk(words=tuple(current)))
@@ -181,7 +179,6 @@ def render_pill(
 
 
 def fit_vertical(clip):
-    """Crop/resize clip to fill 1080×1920."""
     from moviepy.video.fx import Crop, Resize
 
     target_aspect = TARGET_W / TARGET_H
@@ -237,8 +234,49 @@ def _build_caption_clips(chunks: list[Chunk], font: ImageFont.FreeTypeFont) -> l
 
     clips = []
     for chunk_idx, chunk in enumerate(chunks):
+        word_texts = [w.text.upper() for w in chunk.words]
+        bboxes = [font.getbbox(t) for t in word_texts]
+        word_widths = [bb[2] - bb[0] for bb in bboxes]
+        word_heights = [bb[3] - bb[1] for bb in bboxes]
+        total_text_w = sum(word_widths) + WORD_GAP * (len(word_texts) - 1)
+        max_text_h = max(word_heights)
+
+        pill_w = total_text_w + 2 * PILL_PAD_H
+        pill_h = max_text_h + 2 * PILL_PAD_V
+        pill_x = (TARGET_W - pill_w) // 2
+        pill_y = int(TARGET_H * 0.70) - pill_h // 2
+
+        base = Image.new("RGBA", (TARGET_W, TARGET_H), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(base)
+        draw.rounded_rectangle(
+            [
+                pill_x + SHADOW_OFFSET,
+                pill_y + SHADOW_OFFSET,
+                pill_x + pill_w + SHADOW_OFFSET,
+                pill_y + pill_h + SHADOW_OFFSET,
+            ],
+            radius=PILL_RADIUS,
+            fill=SHADOW_COLOR,
+        )
+        draw.rounded_rectangle(
+            [pill_x, pill_y, pill_x + pill_w, pill_y + pill_h],
+            radius=PILL_RADIUS,
+            fill=PILL_COLOR,
+        )
+        x_cursor = pill_x + PILL_PAD_H
+        text_y = pill_y + PILL_PAD_V
+        word_positions: list[tuple[int, int]] = []
+        for text, bb in zip(word_texts, bboxes):
+            tx, ty = x_cursor - bb[0], text_y - bb[1]
+            word_positions.append((tx, ty))
+            draw.text((tx, ty), text, font=font, fill=INACTIVE_COLOR)
+            x_cursor += (bb[2] - bb[0]) + WORD_GAP
+
         for word_idx, word in enumerate(chunk.words):
-            frame = render_pill(chunk, word_idx, font, TARGET_W, TARGET_H)
+            frame = base.copy()
+            fdraw = ImageDraw.Draw(frame)
+            tx, ty = word_positions[word_idx]
+            fdraw.text((tx, ty), word_texts[word_idx], font=font, fill=ACTIVE_COLOR)
             end_time = (
                 chunk.words[word_idx + 1].start
                 if word_idx < len(chunk.words) - 1
@@ -246,7 +284,7 @@ def _build_caption_clips(chunks: list[Chunk], font: ImageFont.FreeTypeFont) -> l
             )
             dur = max(end_time - word.start, 0.05)
             clips.append(
-                ImageClip(frame)
+                ImageClip(np.array(frame))
                 .with_start(word.start)
                 .with_duration(dur)
                 .with_position((0, 0))
@@ -256,9 +294,8 @@ def _build_caption_clips(chunks: list[Chunk], font: ImageFont.FreeTypeFont) -> l
             next_chunk = chunks[chunk_idx + 1]
             gap = next_chunk.start - chunk.end
             if 0 < gap < PAUSE_THRESHOLD_S:
-                frame = render_pill(chunk, -1, font, TARGET_W, TARGET_H)
                 clips.append(
-                    ImageClip(frame)
+                    ImageClip(np.array(base))
                     .with_start(chunk.end)
                     .with_duration(gap)
                     .with_position((0, 0))
