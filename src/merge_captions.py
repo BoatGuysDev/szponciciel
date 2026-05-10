@@ -273,9 +273,12 @@ def compose(
 
     font = _load_font(font_path)
     chunks = group_words(words)
-    audio = AudioFileClip(str(audio_path))
-    bg = VideoFileClip(str(video_path)).without_audio()
+    audio = None
+    bg = None
+    final = None
     try:
+        audio = AudioFileClip(str(audio_path))
+        bg = VideoFileClip(str(video_path)).without_audio()
         bg = fit_vertical(bg)
         bg = loop_to_duration(bg, audio.duration)
         final = CompositeVideoClip(
@@ -284,7 +287,11 @@ def compose(
         final = final.with_duration(audio.duration).with_audio(audio)
         final.write_videofile(str(out_path), **VIDEO_WRITE_KWARGS)
     finally:
-        bg.close()
-        audio.close()
+        if final is not None:
+            final.close()
+        if bg is not None:
+            bg.close()
+        if audio is not None:
+            audio.close()
 
     return out_path
