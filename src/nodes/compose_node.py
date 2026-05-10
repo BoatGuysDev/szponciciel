@@ -8,12 +8,11 @@ from nodes.state import PersonaRunState, persona_run_dir
 def compose_node(state: PersonaRunState) -> dict:
     out_path = persona_run_dir(state) / "output.mp4"
 
-    words = [
-        Word(text=w["text"], start=w["start"], end=w["end"])
-        for w in state["word_timings"]
-    ]
-
     try:
+        words = [
+            Word(text=w["text"], start=w["start"], end=w["end"])
+            for w in state["word_timings"]
+        ]
         out_path.parent.mkdir(parents=True, exist_ok=True)
         compose(
             Path(state["background_video_path"]),
