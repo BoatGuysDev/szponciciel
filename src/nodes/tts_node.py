@@ -1,4 +1,5 @@
 import logging
+import re
 
 from sqlmodel import Session, select
 from TTS.api import TTS
@@ -13,6 +14,11 @@ load_dotenv()
 
 log = logging.getLogger(__name__)
 _tts: TTS | None = None
+
+
+def _sanitize_for_tts(text: str) -> str:
+    # XTTS v2 vocalizes periods as "dot"; replace sentence-ending periods with a space
+    return re.sub(r"\.\s+", " ", text).rstrip(".")
 
 
 def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
@@ -37,7 +43,7 @@ def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     kwargs = {
-        "text": state["narration"],
+        "text": _sanitize_for_tts(state["narration"]),
         "file_path": str(out_path),
         "language": persona.language or "en",
     }
