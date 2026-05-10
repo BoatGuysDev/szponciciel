@@ -8,7 +8,7 @@ RUN_MODE=test uv run pytest
 uv run alembic upgrade head
 
 # Seed the database (first run only)
-uv run python -m src.db.seed
+uv run python -m db.seed
 ```
 
 ## Architecture
