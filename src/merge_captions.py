@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 
 @dataclass(frozen=True)
@@ -98,16 +98,15 @@ def group_words(words: list[Word]) -> list[Chunk]:
     return chunks
 
 
-FONT_SIZE = 90
-PILL_PAD_H = 30
-PILL_PAD_V = 14
-PILL_RADIUS = 16
-WORD_GAP = 18
-ACTIVE_COLOR = (249, 115, 22, 255)  # #F97316 orange
-INACTIVE_COLOR = (156, 163, 175, 255)  # #9CA3AF gray
-PILL_COLOR = (255, 255, 255, 230)
-SHADOW_OFFSET = 3
-SHADOW_COLOR = (0, 0, 0, 38)
+FONT_SIZE = 65
+TEXT_COLOR = (255, 255, 255, 255)
+SHADOW_OFFSET_X = 4
+SHADOW_OFFSET_Y = 5
+SHADOW_BLUR = 4
+SHADOW_OPACITY = 210
+CAPTION_Y_RATIO = 0.75
+SLIDE_IN_DURATION = 0.15  # seconds
+SLIDE_IN_DISTANCE = 35  # pixels
 
 TARGET_W = 1080
 TARGET_H = 1920
@@ -121,61 +120,95 @@ VIDEO_WRITE_KWARGS: dict = {
 }
 
 
+_SYSTEM_FONT_FALLBACKS = [
+    "/System/Library/Fonts/Supplemental/Impact.ttf",  # macOS
+    "/usr/share/fonts/truetype/msttcorefonts/Impact.ttf",  # Linux
+    "/Windows/Fonts/impact.ttf",  # Windows
+]
+
+
 def _load_font(font_path: str | None) -> ImageFont.FreeTypeFont:
     if font_path and Path(font_path).is_file():
         return ImageFont.truetype(font_path, FONT_SIZE)
     bundled = Path(__file__).resolve().parent / "assets/fonts/Anton-Regular.ttf"
     if bundled.is_file():
         return ImageFont.truetype(str(bundled), FONT_SIZE)
-    return ImageFont.load_default(FONT_SIZE)
-
-
-def render_pill(
-    chunk: Chunk,
-    active_idx: int,
-    font: ImageFont.FreeTypeFont,
-    canvas_w: int,
-    canvas_h: int,
-) -> np.ndarray:
-    img = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-
-    word_texts = [w.text.upper() for w in chunk.words]
-    bboxes = [font.getbbox(t) for t in word_texts]
-    word_widths = [bb[2] - bb[0] for bb in bboxes]
-    word_heights = [bb[3] - bb[1] for bb in bboxes]
-    total_text_w = sum(word_widths) + WORD_GAP * (len(word_texts) - 1)
-    max_text_h = max(word_heights)
-
-    pill_w = total_text_w + 2 * PILL_PAD_H
-    pill_h = max_text_h + 2 * PILL_PAD_V
-    pill_x = (canvas_w - pill_w) // 2
-    pill_y = int(canvas_h * 0.70) - pill_h // 2
-
-    draw.rounded_rectangle(
-        [
-            pill_x + SHADOW_OFFSET,
-            pill_y + SHADOW_OFFSET,
-            pill_x + pill_w + SHADOW_OFFSET,
-            pill_y + pill_h + SHADOW_OFFSET,
-        ],
-        radius=PILL_RADIUS,
-        fill=SHADOW_COLOR,
-    )
-    draw.rounded_rectangle(
-        [pill_x, pill_y, pill_x + pill_w, pill_y + pill_h],
-        radius=PILL_RADIUS,
-        fill=PILL_COLOR,
+    for p in _SYSTEM_FONT_FALLBACKS:
+        if Path(p).is_file():
+            return ImageFont.truetype(p, FONT_SIZE)
+    raise FileNotFoundError(
+        "No caption font found. Add Anton-Regular.ttf to src/assets/fonts/."
     )
 
-    x_cursor = pill_x + PILL_PAD_H
-    text_y = pill_y + PILL_PAD_V
-    for i, (text, bb) in enumerate(zip(word_texts, bboxes)):
-        color = ACTIVE_COLOR if i == active_idx else INACTIVE_COLOR
-        draw.text((x_cursor - bb[0], text_y - bb[1]), text, font=font, fill=color)
-        x_cursor += (bb[2] - bb[0]) + WORD_GAP
 
-    return np.array(img)
+def render_text(text: str, font: ImageFont.FreeTypeFont) -> tuple[np.ndarray, int, int]:
+    """Render text with blurred drop shadow on a transparent canvas.
+
+    Returns (RGBA array, left_pad, top_pad) so the caller can compute where
+    the visual text starts within the returned frame.
+    """
+    bb = font.getbbox(text)
+    text_w, text_h = bb[2] - bb[0], bb[3] - bb[1]
+
+    left_pad = SHADOW_BLUR
+    top_pad = SHADOW_BLUR
+    right_pad = SHADOW_OFFSET_X + SHADOW_BLUR
+    bottom_pad = SHADOW_OFFSET_Y + SHADOW_BLUR
+
+    canvas_w = text_w + left_pad + right_pad
+    canvas_h = text_h + top_pad + bottom_pad
+    tx, ty = left_pad - bb[0], top_pad - bb[1]
+
+    shadow = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
+    ImageDraw.Draw(shadow).text(
+        (tx + SHADOW_OFFSET_X, ty + SHADOW_OFFSET_Y),
+        text,
+        font=font,
+        fill=(0, 0, 0, SHADOW_OPACITY),
+    )
+    shadow = shadow.filter(ImageFilter.GaussianBlur(SHADOW_BLUR))
+
+    img = shadow.copy()
+    ImageDraw.Draw(img).text((tx, ty), text, font=font, fill=TEXT_COLOR)
+
+    return np.array(img), left_pad, top_pad
+
+
+def _make_slide_in(base_x: int, base_y: int, slide_dur: float):
+    def pos(t: float) -> tuple[int, int]:
+        if slide_dur <= 0 or t >= slide_dur:
+            return (base_x, base_y)
+        # ease-out quad: fast start, decelerates into final position
+        progress = 1.0 - (1.0 - t / slide_dur) ** 2
+        return (base_x, base_y + int(SLIDE_IN_DISTANCE * (1.0 - progress)))
+
+    return pos
+
+
+def _build_caption_clips(chunks: list[Chunk], font: ImageFont.FreeTypeFont) -> list:
+    from moviepy import ImageClip
+
+    clips = []
+    for chunk in chunks:
+        text = " ".join(w.text.upper() for w in chunk.words)
+        frame, left_pad, top_pad = render_text(text, font)
+
+        bb = font.getbbox(text)
+        text_w = bb[2] - bb[0]
+        base_x = (TARGET_W - text_w) // 2 - left_pad
+        base_y = int(TARGET_H * CAPTION_Y_RATIO) - top_pad
+
+        dur = max(chunk.end - chunk.start, 0.05)
+        slide_dur = min(SLIDE_IN_DURATION, dur)
+
+        clips.append(
+            ImageClip(frame)
+            .with_start(chunk.start)
+            .with_duration(dur)
+            .with_position(_make_slide_in(base_x, base_y, slide_dur))
+        )
+
+    return clips
 
 
 def fit_vertical(clip):
@@ -227,81 +260,6 @@ def loop_to_duration(clip, duration: float):
         loops.append(clip.subclipped(0, take))
         remaining -= take
     return concatenate_videoclips(loops)
-
-
-def _build_caption_clips(chunks: list[Chunk], font: ImageFont.FreeTypeFont) -> list:
-    from moviepy import ImageClip
-
-    clips = []
-    for chunk_idx, chunk in enumerate(chunks):
-        word_texts = [w.text.upper() for w in chunk.words]
-        bboxes = [font.getbbox(t) for t in word_texts]
-        word_widths = [bb[2] - bb[0] for bb in bboxes]
-        word_heights = [bb[3] - bb[1] for bb in bboxes]
-        total_text_w = sum(word_widths) + WORD_GAP * (len(word_texts) - 1)
-        max_text_h = max(word_heights)
-
-        pill_w = total_text_w + 2 * PILL_PAD_H
-        pill_h = max_text_h + 2 * PILL_PAD_V
-        pill_x = (TARGET_W - pill_w) // 2
-        pill_y = int(TARGET_H * 0.70) - pill_h // 2
-
-        base = Image.new("RGBA", (TARGET_W, TARGET_H), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(base)
-        draw.rounded_rectangle(
-            [
-                pill_x + SHADOW_OFFSET,
-                pill_y + SHADOW_OFFSET,
-                pill_x + pill_w + SHADOW_OFFSET,
-                pill_y + pill_h + SHADOW_OFFSET,
-            ],
-            radius=PILL_RADIUS,
-            fill=SHADOW_COLOR,
-        )
-        draw.rounded_rectangle(
-            [pill_x, pill_y, pill_x + pill_w, pill_y + pill_h],
-            radius=PILL_RADIUS,
-            fill=PILL_COLOR,
-        )
-        x_cursor = pill_x + PILL_PAD_H
-        text_y = pill_y + PILL_PAD_V
-        word_positions: list[tuple[int, int]] = []
-        for text, bb in zip(word_texts, bboxes):
-            tx, ty = x_cursor - bb[0], text_y - bb[1]
-            word_positions.append((tx, ty))
-            draw.text((tx, ty), text, font=font, fill=INACTIVE_COLOR)
-            x_cursor += (bb[2] - bb[0]) + WORD_GAP
-
-        for word_idx, word in enumerate(chunk.words):
-            frame = base.copy()
-            fdraw = ImageDraw.Draw(frame)
-            tx, ty = word_positions[word_idx]
-            fdraw.text((tx, ty), word_texts[word_idx], font=font, fill=ACTIVE_COLOR)
-            end_time = (
-                chunk.words[word_idx + 1].start
-                if word_idx < len(chunk.words) - 1
-                else word.end
-            )
-            dur = max(end_time - word.start, 0.05)
-            clips.append(
-                ImageClip(np.array(frame))
-                .with_start(word.start)
-                .with_duration(dur)
-                .with_position((0, 0))
-            )
-
-        if chunk_idx < len(chunks) - 1:
-            next_chunk = chunks[chunk_idx + 1]
-            gap = next_chunk.start - chunk.end
-            if 0 < gap < PAUSE_THRESHOLD_S:
-                clips.append(
-                    ImageClip(np.array(base))
-                    .with_start(chunk.end)
-                    .with_duration(gap)
-                    .with_position((0, 0))
-                )
-
-    return clips
 
 
 def compose(

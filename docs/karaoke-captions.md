@@ -28,19 +28,19 @@ A new chunk starts when any of these is true:
 | joined char count would exceed limit | `MAX_CHARS_PER_CHUNK = 22` |
 | silence gap before the word | `PAUSE_THRESHOLD_S = 0.3 s` |
 
-The char limit is what keeps long words (e.g. German compounds) from overflowing the pill width at `FONT_SIZE = 90`.
+The char limit prevents long words from overflowing the visible width at `FONT_SIZE = 65`.
 
 ---
 
 ## Rendering
 
-Each caption frame is a full `1080×1920` RGBA image with a transparent background. MoviePy's `CompositeVideoClip` composites layers by alpha — the caption must match the video canvas size so it overlays at the correct absolute position.
+Each chunk is rendered into a **minimal transparent canvas** (just large enough to hold the text + shadow padding). MoviePy's `CompositeVideoClip` composites it over the video by alpha, positioned absolutely so it lands in the correct place.
 
-**Base-once pattern** (`_build_caption_clips`): the shadow, pill, and all inactive-colour word labels are drawn once per chunk into a `base` image. Each per-word frame is `base.copy()` plus one overdraw of the active word in orange. This avoids redrawing identical geometry for every word in the chunk.
+**Visual style**: all-caps white text, no background pill, blurred bottom-right drop shadow (`SHADOW_OFFSET_X/Y`, `SHADOW_BLUR`). One `ImageClip` per chunk — no per-word colour changes.
 
-**Word timing**: the active highlight for word `i` runs from `word[i].start` to `word[i+1].start` (not `word[i].end`). Using the next word's start time rather than the current word's end means the highlight stays on during any micro-gap between words instead of briefly going dark.
+**Shadow technique**: draw the shadow text offset by `(SHADOW_OFFSET_X, SHADOW_OFFSET_Y)` on a transparent canvas, apply `GaussianBlur(SHADOW_BLUR)`, then overdraw the main text at the origin position.
 
-**Inter-chunk gap**: if the silence between two chunks is shorter than `PAUSE_THRESHOLD_S`, the last chunk is shown all-inactive (no highlight) for the duration of the gap, giving a visual hold before the next chunk appears.
+**Slide-in animation**: each clip uses a position callable (`_make_slide_in`) that starts `SLIDE_IN_DISTANCE` pixels below the target `y` and eases out (quadratic) over `SLIDE_IN_DURATION` seconds. The clip disappears instantly at its end — no fade-out.
 
 ---
 
@@ -49,10 +49,11 @@ Each caption frame is a full `1080×1920` RGBA image with a transparent backgrou
 `_load_font` resolution order:
 
 1. Explicit `font_path` argument (only used by `compose()` callers that pass it).
-2. `src/assets/fonts/Anton-Regular.ttf` — the bundled font.
-3. PIL's built-in default (no external dependency, but metrics will differ).
+2. `src/assets/fonts/Anton-Regular.ttf` — the bundled font (Anton, Google Fonts, bold condensed).
+3. System Impact: macOS `/System/Library/Fonts/Supplemental/Impact.ttf`, Linux msttcorefonts, Windows `C:/Windows/Fonts/impact.ttf`.
+4. `FileNotFoundError` — crashes rather than silently using PIL's bitmap default (which produces unreadable output).
 
-Anton-Regular must be present at the bundled path for production output. The PIL default fallback exists only so tests and dev runs don't crash when assets are absent.
+Anton-Regular.ttf must be present at the bundled path for production output.
 
 ---
 
@@ -70,9 +71,12 @@ All visual constants are at the top of `merge_captions.py`:
 
 | Constant | Default | Effect |
 |---|---|---|
-| `FONT_SIZE` | 90 | Pill height; reduce if long words overflow |
+| `FONT_SIZE` | 65 | Caption text size |
 | `MAX_CHARS_PER_CHUNK` | 22 | Max joined chars before forced chunk break |
 | `PAUSE_THRESHOLD_S` | 0.3 s | Silence that triggers a new chunk |
-| `ACTIVE_COLOR` | `#F97316` orange | Highlighted word colour |
-| `INACTIVE_COLOR` | `#9CA3AF` gray | Non-highlighted word colour |
-| `pill_y` formula | `canvas_h * 0.70` | Vertical position of caption (70% from top) |
+| `CAPTION_Y_RATIO` | 0.75 | Vertical position (75% from top) |
+| `SHADOW_OFFSET_X/Y` | 4, 5 | Drop shadow offset |
+| `SHADOW_BLUR` | 4 | GaussianBlur radius for shadow softness |
+| `SHADOW_OPACITY` | 210 | Shadow alpha (0–255) |
+| `SLIDE_IN_DURATION` | 0.15 s | Ease-out animation duration on enter |
+| `SLIDE_IN_DISTANCE` | 35 px | Starting offset below final position |
