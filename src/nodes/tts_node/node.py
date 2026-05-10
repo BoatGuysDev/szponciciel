@@ -17,8 +17,9 @@ _tts: TTS | None = None
 
 
 def _sanitize_for_tts(text: str) -> str:
-    # XTTS v2 vocalizes periods as "dot"; replace sentence-ending periods with a space
-    return re.sub(r"\.\s+", " ", text).rstrip(".")
+    # XTTS v2 vocalizes single periods as "dot"; replace with ellipsis which produces
+    # a natural pause without being spoken
+    return re.sub(r"\.(\s+|$)", r"...\1", text)
 
 
 def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
