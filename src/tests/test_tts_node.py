@@ -86,7 +86,7 @@ class TestTtsNode(BaseTestClass):
         audio_path = str(Path("runs/run-1/persona-1/speech.wav"))
 
         self.mock_tts_instance.tts_to_file.assert_called_once_with(
-            text="Hello, this is a test narration.",
+            text="Hello, this is a test narration...",
             file_path=audio_path,
             language="en",
             speaker_wav="path/to/voice.wav",
@@ -110,7 +110,7 @@ class TestTtsNode(BaseTestClass):
         audio_path = str(Path("runs/run-1/persona-1/speech.wav"))
 
         self.mock_tts_instance.tts_to_file.assert_called_once_with(
-            text="Hello, this is a test narration.",
+            text="Hello, this is a test narration...",
             file_path=audio_path,
             language="en",
             speaker="en_speaker_0",
