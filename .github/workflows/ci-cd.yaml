@@ -10,6 +10,8 @@ on:
       - '**.md'
       - '.claude/**'
       - 'migrations/**'
+  
+  workflow_dispatch: 
 
 permissions:
   contents: read
