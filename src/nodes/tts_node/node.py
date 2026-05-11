@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from src.db import get_engine
 from src.models import Persona
-from .state import PersonaRunState
+from ..state import PersonaRunState
 
 load_dotenv()
 
