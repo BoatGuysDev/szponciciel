@@ -25,7 +25,7 @@ class TestTtsNode(BaseTestClass):
 
     @pytest.fixture(autouse=True)
     def mock_tts(self):
-        with patch("src.nodes.tts_node._tts") as mock_tts_instance:
+        with patch("src.nodes.tts_node.node._tts") as mock_tts_instance:
             self.mock_tts_instance = mock_tts_instance
             yield mock_tts_instance
 

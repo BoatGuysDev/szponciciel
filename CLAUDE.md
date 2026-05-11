@@ -121,3 +121,4 @@ with (
 | `GOOGLE_GENAI_USE_VERTEXAI` | `true` / `false`for using Vertex AI | Yes |
 | `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID | Yes |
 | `COMPUTE_DEVICE` | `cpu` / `cuda` / `mps` for Coqui TTS | No (defaults to `cpu`) |
+| `MODEL` | Gemini model name used by LLM nodes | No (defaults to `gemini-2.5-flash-lite`) |
