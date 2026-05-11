@@ -36,31 +36,40 @@ def _truncate_caption(caption: str) -> str:
         CAPTION_MAX_CHARS,
         len(caption),
     )
+
     cut = caption[:CAPTION_MAX_CHARS]
     last_space = cut.rfind(" ")
     if last_space >= CAPTION_MAX_CHARS - WORD_BOUNDARY_WINDOW:
         cut = cut[:last_space]
+
     return cut.rstrip()
 
 
 def caption_node(state: PersonaRunState) -> CaptionResult:
     """Generates the TikTok post caption and hashtags from the narration."""
 
+    result = {
+        "tiktok_caption": "",
+        "hashtags": [],
+        "is_fatal_error": False,
+        "error_message": None,
+    }
+
     with Session(get_engine()) as session:
         persona = session.exec(
             select(Persona).where(Persona.id == state["persona_id"])
         ).first()
         if not persona:
-            return {
-                "is_fatal_error": True,
-                "error_message": f"Persona with id {state['persona_id']} not found.",
-            }
+            result["is_fatal_error"] = True
+            result["error_message"] = (
+                f"Persona with id {state['persona_id']} not found."
+            )
+            return result
 
     if not all([state.get("narration"), persona.language, persona.style, persona.tone]):
-        return {
-            "is_fatal_error": True,
-            "error_message": "Missing required information to create caption.",
-        }
+        result["is_fatal_error"] = True
+        result["error_message"] = "Missing required information to create caption."
+        return result
 
     agent = create_agent(
         model=ChatGoogleGenerativeAI(model=os.getenv("MODEL", "gemini-2.5-flash-lite")),
@@ -79,15 +88,11 @@ def caption_node(state: PersonaRunState) -> CaptionResult:
     parsed_output = response.get("structured_response")
     if parsed_output is None:
         log.warning("Caption agent returned no structured response.")
-        return {
-            "is_fatal_error": True,
-            "error_message": "Failed to parse agent response.",
-        }
+        result["is_fatal_error"] = True
+        result["error_message"] = "Failed to parse agent response."
+        return result
 
-    caption = _truncate_caption(parsed_output.caption)
-    hashtags = parsed_output.hashtags
+    result["tiktok_caption"] = _truncate_caption(parsed_output.caption)
+    result["hashtags"] = parsed_output.hashtags
 
-    return {
-        "tiktok_caption": caption,
-        "hashtags": hashtags,
-    }
+    return result

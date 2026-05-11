@@ -162,7 +162,7 @@ class TestCaptionNode(BaseTestClass):
                     {"persona_id": "1", "narration": "Some narration text."}
                 )
 
-        assert result.get("is_fatal_error") is None
+        assert result.get("is_fatal_error") is False
         assert result.get("error_message") is None
         assert result["tiktok_caption"] == expected_caption
         assert result["hashtags"] == expected_hashtags
@@ -187,5 +187,6 @@ class TestCaptionNode(BaseTestClass):
                     {"persona_id": "1", "narration": "Some narration text."}
                 )
 
-        assert result.get("is_fatal_error") is None
+        assert result.get("is_fatal_error") is False
+        assert result.get("error_message") is None
         assert len(result["tiktok_caption"]) == 2200
