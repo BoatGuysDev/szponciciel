@@ -93,15 +93,10 @@ Each persona run draws a weighted random choice based on `real_news_ratio` (coin
 no historical correction). The pipeline always produces both an `approved_script` (fake) and a
 ranked `source_article` (real) — the persona sub-graph picks which to narrate.
 
-**Narrator node inputs by content type:**
-
-| content_type | Input to Narrator |
-|---|---|
-| `"fake"` | `approved_script` + persona style/tone/language |
-| `"real"` | `title` + `topic` + `summary` from `NewsArticle` + persona style/tone/language |
-
-The Narrator expands real articles into ~100-150 word narrations and handles translation in a
-single LLM call. No separate summarization node.
+**Narrator node input:** `run.base_script` + persona `style`, `tone`, `language`. The narrator
+adapts whatever script was produced — it does not distinguish between real and fake content.
+The script is already the correct input (real article adapted upstream or fake script from the
+writer loop). Translation and style adaptation happen in a single LLM call.
 
 ---
 
@@ -232,23 +227,27 @@ runs/
       output.mp4
 
 src/
-  agents/           — content_subgraph, production_subgraph
-  tools/            — upload_tiktok_video (existing), caption_node, tts_node
+  config.py
+  models/           — Run, Persona, PersonaRun (SQLModel)
+  nodes/
+    state.py        — PersonaRunState TypedDict
+    caption_node/   — node.py, response_format.py, system_prompt.py
+    narrator_node/  — node.py, system_prompt.py
+    tts_node/       — node.py
   providers/        — VideoProvider protocol, StockVideoProvider, AIVideoProvider (stub)
-  models/           — Persona, PipelineState, PersonaRunState, NewsArticle
-  db/               — SQLite schema, migrations, persona loader from personas.json
-  assets/
-    fonts/          — Anton-Regular.ttf (existing)
+  db/               — database.py, seed.py, seeds/
+  tools/            — tiktok.py (upload_tiktok_video)
+  tests/            — base_test_class.py, test_*.py
 
 docs/               — architecture documentation
 ```
 
 ---
 
-## LLM Nodes (NVIDIA NIM)
+## LLM Nodes
 
-All LLM-powered nodes use NVIDIA NIM via an OpenAI-compatible client. Same LangChain code as
-OpenAI — only the `base_url` changes.
+All LLM-powered nodes use `gemini-2.5-flash-lite` via `ChatGoogleGenerativeAI` (Vertex AI free
+tier). Auth via Google Application Default Credentials (`gcloud auth application-default login`).
 
 | Node | Responsibility |
 |---|---|
@@ -258,8 +257,8 @@ OpenAI — only the `base_url` changes.
 | Caption node | Generate TikTok post caption + hashtag list |
 | Category selector | Pick video category from 10 options given article + stats |
 
-TTS uses **Coqui xTTSv2 locally** (MPS on Apple Silicon). NVIDIA NIM has no competitive TTS
-offering. Coqui supports voice cloning via `speaker_wav` reference audio, enabling distinct
+TTS uses **Coqui xTTSv2 locally** (MPS on Apple Silicon). Coqui supports voice cloning 
+via `speaker_wav` reference audio, enabling distinct
 voices per persona.
 
 ---
