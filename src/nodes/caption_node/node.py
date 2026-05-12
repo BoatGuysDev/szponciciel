@@ -71,19 +71,24 @@ def caption_node(state: PersonaRunState) -> CaptionResult:
         result["error_message"] = "Missing required information to create caption."
         return result
 
-    agent = create_agent(
-        model=ChatGoogleGenerativeAI(model=settings.llm_model),
-        system_prompt=CAPTION_SYSTEM_PROMPT,
-        response_format=CaptionAgentResponseFormat,
-    )
+    try:
+        agent = create_agent(
+            model=ChatGoogleGenerativeAI(model=settings.llm_model),
+            system_prompt=CAPTION_SYSTEM_PROMPT,
+            response_format=CaptionAgentResponseFormat,
+        )
 
-    prompt = f"""
+        prompt = f"""
         Create a TikTok post caption for the following narration: {state["narration"]}
 
         The caption must be in {persona.language} and match the following style and tone: {persona.style}, {persona.tone}.
     """
 
-    response = agent.invoke({"messages": [HumanMessage(content=prompt)]})
+        response = agent.invoke({"messages": [HumanMessage(content=prompt)]})
+    except Exception as e:
+        result["is_fatal_error"] = True
+        result["error_message"] = f"Caption agent failed: {e}"
+        return result
 
     parsed_output = response.get("structured_response")
     if parsed_output is None:
