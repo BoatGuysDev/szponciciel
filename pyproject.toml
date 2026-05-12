@@ -16,6 +16,7 @@ dependencies = [
     "langgraph>=1.1.9",
     "moviepy>=2.2.1",
     "python-dotenv>=1.2.2",
+    "python-json-logger>=4.1.0",
     "requests>=2.32",
     "sqlmodel>=0.0.38",
     "tqdm>=4.67.3",
