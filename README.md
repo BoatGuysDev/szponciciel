@@ -11,7 +11,7 @@ The project is developed as a study project within the PIAT Jira space.
 Build a fully automated, self-improving TikTok content factory that:
 
 - Discovers and ranks trending news articles
-- Generates persona-specific scripts blending factual and satirical content (`true_fake_ratio`)
+- Generates persona-specific scripts blending factual and satirical content (`real_news_ratio`)
 - Refines scripts iteratively until a quality threshold is met
 - Converts approved scripts into TikTok-ready videos (TTS narration + AI footage + captions)
 - Publishes to multiple TikTok accounts via Zernio
@@ -46,6 +46,20 @@ uv run python -m src.db.seed
 **Additional guides:**
 - [Configure application default credentials - Google Cloud CLI](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/start/gcp-auth)
 
+## Environment variables
+
+Copy `.env.example` to `.env` and fill in the values. The variables:
+
+| Variable | Purpose | Required | Default |
+|---|---|---|---|
+| `DB_PATH` | Path to the SQLite DB file | Yes | `szponciciel.db` |
+| `RUN_MODE` | `development` for normal use; `test` switches to an in-memory DB and is required by the test suite | Yes | `development` |
+| `ZERNIO_API_KEY` | API key for publishing videos via Zernio | Yes | — |
+| `GROUND_TRUTH_MEDIA_ACCOUNT_ID` | TikTok account ID assigned to the ground-truth persona during DB seeding | Yes (for seeding) | — |
+| `GOOGLE_GENAI_USE_VERTEXAI` | Route Gemini calls through Vertex AI (`true`) or the public GenAI API (`false`) | Yes | `true` |
+| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID used for Vertex AI | Yes (when `GOOGLE_GENAI_USE_VERTEXAI=true`) | — |
+| `COMPUTE_DEVICE` | Coqui TTS device: `cpu`, `cuda`, or `mps` | No | `cpu` |
+
 ## Agent Workflow
 
 ```
@@ -57,7 +71,7 @@ uv run python -m src.db.seed
          ▼
 ┌─────────────────┐
 │     Writer      │  Generates a script per account, parameterized by
-│   (Creator)     │  {persona, language, tone, true_fake_ratio, voice}
+│   (Creator)     │  {persona, language, tone, real_news_ratio, voice}
 └────────┬────────┘
          │ draft script
          ▼
@@ -79,7 +93,7 @@ uv run python -m src.db.seed
 │        Output & Distribution            │
 │  Upload via Zernio API                  │
 │  Attach run metadata {run_id, persona,  │
-│  true_fake_ratio, content_tags, ...}    │
+│  real_news_ratio, content_tags, ...}    │
 └─────────────────────────────────────────┘
                      │
                      ▼
@@ -92,6 +106,7 @@ uv run python -m src.db.seed
 ```
 
 Each account runs its own Writer ↔ Critic loop with its own path config. Video footage is generated once per news story and shared; narration and captions are generated per account.
+
 
 ## Results
 
