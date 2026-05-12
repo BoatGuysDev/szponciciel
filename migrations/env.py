@@ -9,11 +9,14 @@ from sqlmodel import SQLModel
 import src.models  # noqa: F401
 
 from src.db.database import get_engine
+from src.logging_setup import setup_logging
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+setup_logging()
 
 target_metadata = SQLModel.metadata
 

@@ -1,10 +1,12 @@
 from dotenv import load_dotenv
 
 from db.database import init_db
+from logging_setup import setup_logging
 
 
 def seed_all() -> None:
     load_dotenv()
+    setup_logging()
     init_db()
 
     import db.seeds as _seeds
