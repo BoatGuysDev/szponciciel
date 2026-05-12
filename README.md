@@ -40,7 +40,7 @@ cp .env.example .env
 uv run alembic upgrade head
 
 # 6. Seed the database (first run only)
-uv run python -m src.db.seed
+uv run python -m db.seed
 ```
 
 **Additional guides:**
