@@ -4,11 +4,11 @@ from langgraph.graph import StateGraph, START, END
 from sqlmodel import Session
 from sqlalchemy import Engine
 
-from src.nodes import caption_node, PersonaRunState
-from src.models import Persona
-from src.nodes.caption_node.response_format import CaptionAgentResponseFormat
+from nodes import caption_node, PersonaRunState
+from models import Persona
+from nodes.caption_node.response_format import CaptionAgentResponseFormat
 
-from .base_test_class import BaseTestClass
+from tests.base_test_class import BaseTestClass
 
 
 class TestCaptionNode(BaseTestClass):
@@ -129,10 +129,8 @@ class TestCaptionNode(BaseTestClass):
             session.commit()
 
             with (
-                patch("src.nodes.caption_node.node.ChatGoogleGenerativeAI"),
-                patch(
-                    "src.nodes.caption_node.node.create_agent", return_value=mock_agent
-                ),
+                patch("nodes.caption_node.node.ChatGoogleGenerativeAI"),
+                patch("nodes.caption_node.node.create_agent", return_value=mock_agent),
             ):
                 result = graph.compile().invoke(
                     {"persona_id": "1", "narration": "Some narration text."}
@@ -153,10 +151,8 @@ class TestCaptionNode(BaseTestClass):
             session.commit()
 
             with (
-                patch("src.nodes.caption_node.node.ChatGoogleGenerativeAI"),
-                patch(
-                    "src.nodes.caption_node.node.create_agent", return_value=mock_agent
-                ),
+                patch("nodes.caption_node.node.ChatGoogleGenerativeAI"),
+                patch("nodes.caption_node.node.create_agent", return_value=mock_agent),
             ):
                 result = graph.compile().invoke(
                     {"persona_id": "1", "narration": "Some narration text."}
@@ -178,10 +174,8 @@ class TestCaptionNode(BaseTestClass):
             session.commit()
 
             with (
-                patch("src.nodes.caption_node.node.ChatGoogleGenerativeAI"),
-                patch(
-                    "src.nodes.caption_node.node.create_agent", return_value=mock_agent
-                ),
+                patch("nodes.caption_node.node.ChatGoogleGenerativeAI"),
+                patch("nodes.caption_node.node.create_agent", return_value=mock_agent),
             ):
                 result = graph.compile().invoke(
                     {"persona_id": "1", "narration": "Some narration text."}
