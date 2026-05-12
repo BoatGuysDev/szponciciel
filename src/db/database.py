@@ -1,6 +1,5 @@
 import os
 from collections.abc import Generator
-from pathlib import Path
 from dotenv import load_dotenv
 
 from sqlalchemy import Engine
@@ -13,17 +12,30 @@ _engine: Engine | None = None
 load_dotenv()
 
 
+DEFAULT_DATABASE_URL = "sqlite:///szponciciel.db"
+
+
+def database_url() -> str:
+    """Resolve the SQLAlchemy URL.
+
+    `DATABASE_URL` wins when set. Otherwise `RUN_MODE=test` selects an
+    in-memory SQLite engine, and everything else falls back to the
+    project's default on-disk SQLite file.
+    """
+
+    url = os.getenv("DATABASE_URL")
+    if url:
+        return url
+    if os.getenv("RUN_MODE", "development") == "test":
+        return "sqlite:///:memory:"
+    return DEFAULT_DATABASE_URL
+
+
 def get_engine() -> Engine:
     global _engine
     if _engine is None:
-        run_mode = os.getenv("RUN_MODE", "development")
-        if run_mode == "test":
-            db_path = Path(":memory:")
-        else:
-            db_path = Path(os.getenv("DB_PATH", "szponciciel.db"))
-
         _engine = create_engine(
-            f"sqlite:///{db_path}",
+            database_url(),
             echo=False,
             connect_args={"check_same_thread": False},
         )
