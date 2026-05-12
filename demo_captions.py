@@ -2,10 +2,9 @@
 
 import random
 import sys
-
-sys.path.insert(0, "src")
-
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 from config import COMPUTE_DEVICE, WHISPER_MODEL
 from merge_captions import compose, transcribe_and_align
