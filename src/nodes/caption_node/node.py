@@ -7,9 +7,9 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
 from langchain.messages import HumanMessage
 
-from src.config import settings
-from src.db import get_engine
-from src.models import Persona
+from config import settings
+from db import get_engine
+from models import Persona
 from .response_format import CaptionAgentResponseFormat
 
 from .system_prompt import CAPTION_SYSTEM_PROMPT
