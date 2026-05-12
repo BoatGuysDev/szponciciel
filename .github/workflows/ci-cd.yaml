@@ -9,9 +9,8 @@ on:
       - '.gitignore'
       - '**.md'
       - '.claude/**'
-      - 'migrations/**'
-  
-  workflow_dispatch: 
+
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,27 +18,93 @@ permissions:
 env:
   RUN_MODE: test
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          python-version: '3.13'
+          enable-cache: true
+          cache-python: true
+
+      - name: Cache virtualenv
+        uses: actions/cache@v5
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+
+      - name: Cache ruff
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ruff
+          key: ruff-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Lint (ruff check)
+        run: uv run ruff check .
+
+      - name: Format check (ruff format)
+        run: uv run ruff format --check .
+
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v8.1.0
-      with:
-        python-version: '3.13'
-        enable-cache: true
-        cache-python: true
-    - name: Cache virtualenv
-      uses: actions/cache@v5
-      with:
-        path: .venv
-        key: venv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-    - name: Install dependencies
-      run: uv sync --locked
-    - name: Run tests
-      run: uv run pytest
+      - uses: actions/checkout@v6
 
-concurrency: 
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          python-version: '3.13'
+          enable-cache: true
+          cache-python: true
+
+      - name: Cache virtualenv
+        uses: actions/cache@v5
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Run tests
+        run: uv run pytest
+
+  migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          python-version: '3.13'
+          enable-cache: true
+          cache-python: true
+
+      - name: Cache virtualenv
+        uses: actions/cache@v5
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Migration drift check (alembic check)
+        run: uv run alembic check
+
+      - name: Migration smoke test (alembic upgrade head)
+        run: uv run alembic upgrade head
+        env:
+          DB_PATH: /tmp/ci-smoke.db
