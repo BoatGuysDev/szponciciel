@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 from langgraph.graph import StateGraph, START, END
 
-from config import COMPUTE_DEVICE, WHISPER_MODEL
+from config import settings
 from merge_captions import Word
 from nodes import PersonaRunState
 from nodes.align_node import align_node
@@ -62,7 +62,9 @@ class TestAlignNode(BaseTestClass):
         )
 
         self.mock_transcribe.assert_called_once_with(
-            audio_file, device=COMPUTE_DEVICE, model_size=WHISPER_MODEL
+            audio_file,
+            device=settings.compute_device,
+            model_size=settings.whisper_model,
         )
         assert not result.get("is_fatal_error")
         assert result["word_timings"] == _EXPECTED_TIMINGS

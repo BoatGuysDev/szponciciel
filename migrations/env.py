@@ -1,14 +1,12 @@
-import os
 from logging.config import fileConfig
-from pathlib import Path
 
 import sqlmodel.sql.sqltypes
 from alembic import context
 from sqlmodel import SQLModel
 
-import src.models  # noqa: F401
+import models  # noqa: F401
 
-from src.db.database import get_engine
+from db.database import database_url, get_engine
 
 config = context.config
 
@@ -16,11 +14,6 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = SQLModel.metadata
-
-
-def _db_url() -> str:
-    db_path = Path(os.getenv("DB_PATH", "szponciciel.db"))
-    return f"sqlite:///{db_path}"
 
 
 def _render_item(type_, obj, autogen_context):
@@ -32,7 +25,7 @@ def _render_item(type_, obj, autogen_context):
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=_db_url(),
+        url=database_url(),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},

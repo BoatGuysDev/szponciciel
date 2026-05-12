@@ -40,7 +40,7 @@ cp .env.example .env
 uv run alembic upgrade head
 
 # 6. Seed the database (first run only)
-uv run python -m src.db.seed
+uv run python -m db.seed
 ```
 
 **Additional guides:**
@@ -52,13 +52,14 @@ Copy `.env.example` to `.env` and fill in the values. The variables:
 
 | Variable | Purpose | Required | Default |
 |---|---|---|---|
-| `DB_PATH` | Path to the SQLite DB file | Yes | `szponciciel.db` |
-| `RUN_MODE` | `development` for normal use; `test` switches to an in-memory DB and is required by the test suite | Yes | `development` |
+| `DATABASE_URL` | Full SQLAlchemy URL. Required (no implicit default). Test runs are pinned to `sqlite:///:memory:` by `src/tests/conftest.py` regardless of this value | Yes | — |
+| `RUN_MODE` | Application mode flag for non-DB behaviours (logging defaults, etc.). Valid values: `development`, `test`, `production` | No | `development` |
 | `ZERNIO_API_KEY` | API key for publishing videos via Zernio | Yes | — |
 | `GROUND_TRUTH_MEDIA_ACCOUNT_ID` | TikTok account ID assigned to the ground-truth persona during DB seeding | Yes (for seeding) | — |
 | `GOOGLE_GENAI_USE_VERTEXAI` | Route Gemini calls through Vertex AI (`true`) or the public GenAI API (`false`) | Yes | `true` |
 | `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID used for Vertex AI | Yes (when `GOOGLE_GENAI_USE_VERTEXAI=true`) | — |
 | `COMPUTE_DEVICE` | Coqui TTS device: `cpu`, `cuda`, or `mps` | No | `cpu` |
+| `TTS_MODEL` | Coqui TTS model name used by `tts_node` | No | `tts_models/multilingual/multi-dataset/xtts_v2` |
 
 ## Agent Workflow
 
