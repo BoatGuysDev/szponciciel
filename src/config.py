@@ -21,7 +21,6 @@ class Settings(BaseSettings):
     run_mode: Literal["development", "test", "production"] = "development"
 
     media_root: Path = PROJECT_ROOT / "media"
-    db_path: Path = Path("szponciciel.db")
 
     compute_device: str = "cpu"
     whisper_model: str = "base"

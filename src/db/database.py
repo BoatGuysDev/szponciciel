@@ -1,29 +1,52 @@
+import os
 from collections.abc import Generator
-from pathlib import Path
+from dotenv import load_dotenv
 
 from sqlalchemy import Engine
 from sqlmodel import Session, SQLModel, create_engine
 
-from config import settings
 from models import Persona, PersonaRun, Run  # noqa: F401
 
 _engine: Engine | None = None
+
+load_dotenv()
+
+
+def database_url() -> str:
+    """Resolve the SQLAlchemy URL from `DATABASE_URL`.
+
+    Required — there is no implicit default. The test suite pins this to
+    `sqlite:///:memory:` via `src/tests/conftest.py`, so production code
+    stays free of test-aware branching.
+    """
+
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        raise RuntimeError(
+            "DATABASE_URL is not set. Copy .env.example to .env or export it "
+            "in your environment."
+        )
+    return url
 
 
 def get_engine() -> Engine:
     global _engine
     if _engine is None:
-        if settings.run_mode == "test":
-            db_path = Path(":memory:")
-        else:
-            db_path = settings.db_path
-
-        _engine = create_engine(
-            f"sqlite:///{db_path}",
-            echo=False,
-            connect_args={"check_same_thread": False},
-        )
+        url = database_url()
+        kwargs: dict = {"echo": False}
+        if url.startswith("sqlite"):
+            kwargs["connect_args"] = {"check_same_thread": False}
+        _engine = create_engine(url, **kwargs)
     return _engine
+
+
+def reset_engine() -> None:
+    """Drop the cached engine. Used by test setup and rare reload scenarios."""
+
+    global _engine
+    if _engine is not None:
+        _engine.dispose()
+        _engine = None
 
 
 def reset_db() -> None:

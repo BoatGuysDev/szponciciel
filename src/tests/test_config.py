@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from config import PROJECT_ROOT, Settings
 
 
@@ -7,7 +5,6 @@ def test_defaults_when_env_empty(monkeypatch, tmp_path):
     for var in (
         "RUN_MODE",
         "MEDIA_ROOT",
-        "DB_PATH",
         "COMPUTE_DEVICE",
         "WHISPER_MODEL",
         "MODEL",
@@ -22,7 +19,6 @@ def test_defaults_when_env_empty(monkeypatch, tmp_path):
 
     assert s.run_mode == "development"
     assert s.media_root == PROJECT_ROOT / "media"
-    assert s.db_path == Path("szponciciel.db")
     assert s.compute_device == "cpu"
     assert s.whisper_model == "base"
     assert s.llm_model == "gemini-2.5-flash-lite"
