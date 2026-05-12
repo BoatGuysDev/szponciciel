@@ -6,6 +6,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
+from TTS.api import TTS
+
 from config import COMPUTE_DEVICE, WHISPER_MODEL
 from merge_captions import compose, transcribe_and_align
 from nodes.tts_node import _sanitize_for_tts
@@ -23,7 +25,6 @@ out_path = Path("/tmp/demo_captions_output.mp4")
 
 # --- 1. TTS ---
 print("Step 1/3 — generating speech…")
-from TTS.api import TTS
 
 tts = TTS(
     model_name="tts_models/multilingual/multi-dataset/xtts_v2", progress_bar=True

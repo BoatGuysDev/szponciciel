@@ -27,10 +27,17 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
+    "ruff>=0.15.12",
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+exclude = [
+    "src/test_agent.ipynb",
+    "src/test_agent_fixed_schema.ipynb",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["src/tests"]
