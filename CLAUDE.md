@@ -42,6 +42,10 @@ SQLite via SQLModel + Alembic. Dev DB file: `szponciciel.db`. Tests use an in-me
 
 Nodes use `ChatGoogleGenerativeAI` (Gemini, `gemini-2.5-flash-lite`). Auth via Google Application Default Credentials (`gcloud auth application-default login`).
 
+### Configuration
+
+All environment-driven config goes through `src/config.py` (`pydantic-settings`). Import the singleton: `from config import settings` and use typed attributes (`settings.compute_device`, `settings.llm_model`, `settings.run_mode`, etc.). The module calls `load_dotenv()` on import so SDKs that read `os.environ` directly (Google GenAI, Zernio) keep working. See `.env.example` for the full list of supported variables.
+
 ## Testing
 
 Tests live in `src/tests/`. Conventions:
