@@ -83,7 +83,7 @@ jobs:
   migrations:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: sqlite:///./ci_migrations.db
+      DATABASE_URL: sqlite:////tmp/alembic-ci-${{ github.run_id }}-${{ github.run_attempt }}.db
     steps:
       - uses: actions/checkout@v6
 
