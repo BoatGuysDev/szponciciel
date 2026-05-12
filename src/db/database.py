@@ -32,11 +32,11 @@ def database_url() -> str:
 def get_engine() -> Engine:
     global _engine
     if _engine is None:
-        _engine = create_engine(
-            database_url(),
-            echo=False,
-            connect_args={"check_same_thread": False},
-        )
+        url = database_url()
+        kwargs: dict = {"echo": False}
+        if url.startswith("sqlite"):
+            kwargs["connect_args"] = {"check_same_thread": False}
+        _engine = create_engine(url, **kwargs)
     return _engine
 
 
