@@ -6,7 +6,19 @@ from merge_captions import transcribe_and_align
 from nodes.state import PersonaRunState
 
 
-def align_node(state: PersonaRunState) -> dict:
+class WordTiming(TypedDict):
+    text: str
+    start: float
+    end: float
+
+
+class AlignResult(TypedDict, total=False):
+    word_timings: list[WordTiming]
+    is_fatal_error: bool
+    error_message: str | None
+
+
+def align_node(state: PersonaRunState) -> AlignResult:
     audio_path = Path(state["audio_path"])
     if not audio_path.is_file():
         return {

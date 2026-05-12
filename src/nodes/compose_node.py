@@ -1,11 +1,18 @@
 from pathlib import Path
+from typing import TypedDict
 
 from merge_captions import Word, compose
 
 from nodes.state import PersonaRunState, persona_run_dir
 
 
-def compose_node(state: PersonaRunState) -> dict:
+class ComposeResult(TypedDict, total=False):
+    output_video_path: str
+    is_fatal_error: bool
+    error_message: str | None
+
+
+def compose_node(state: PersonaRunState) -> ComposeResult:
     out_path = persona_run_dir(state) / "output.mp4"
 
     try:
