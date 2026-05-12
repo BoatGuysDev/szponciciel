@@ -1,8 +1,36 @@
-import os
 from pathlib import Path
+from typing import Literal
+
+from dotenv import load_dotenv
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-MEDIA_ROOT: Path = Path(os.environ.get("MEDIA_ROOT", PROJECT_ROOT / "media"))
-COMPUTE_DEVICE: str = os.getenv("COMPUTE_DEVICE", "cpu")
-WHISPER_MODEL: str = os.getenv("WHISPER_MODEL", "base")
+load_dotenv(PROJECT_ROOT / ".env")
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=PROJECT_ROOT / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        case_sensitive=False,
+    )
+
+    run_mode: Literal["development", "test", "production"] = "development"
+
+    media_root: Path = PROJECT_ROOT / "media"
+    db_path: Path = Path("szponciciel.db")
+
+    compute_device: str = "cpu"
+    whisper_model: str = "base"
+    llm_model: str = Field(default="gemini-2.5-flash-lite", validation_alias="MODEL")
+
+    zernio_api_key: str | None = None
+    ground_truth_media_account_id: str | None = None
+    google_genai_use_vertexai: bool | None = None
+    google_cloud_project: str | None = None
+
+
+settings = Settings()
