@@ -4,9 +4,9 @@ import sqlmodel.sql.sqltypes
 from alembic import context
 from sqlmodel import SQLModel
 
-import src.models  # noqa: F401
+import models  # noqa: F401
 
-from src.db.database import database_url, get_engine
+from db.database import database_url, get_engine
 
 config = context.config
 

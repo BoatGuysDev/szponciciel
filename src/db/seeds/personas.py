@@ -1,15 +1,19 @@
-import os
-
+from config import settings
 from models import Persona
 
 from db.seeds._utils import seed_records
 
 
 def load() -> int:
+    if not settings.ground_truth_media_account_id:
+        raise RuntimeError(
+            "GROUND_TRUTH_MEDIA_ACCOUNT_ID is required to seed the ground_truth_media persona."
+        )
+
     personas = [
         Persona(
             id="ground_truth_media",
-            tiktok_account_id=os.environ["GROUND_TRUTH_MEDIA_ACCOUNT_ID"],
+            tiktok_account_id=settings.ground_truth_media_account_id,
             style="neutral, factual",
             tone="informative",
             language="en",

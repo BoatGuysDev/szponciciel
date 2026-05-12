@@ -40,7 +40,7 @@ cp .env.example .env
 uv run alembic upgrade head
 
 # 6. Seed the database (first run only)
-uv run python -m src.db.seed
+uv run python -m db.seed
 ```
 
 **Additional guides:**
@@ -59,6 +59,7 @@ Copy `.env.example` to `.env` and fill in the values. The variables:
 | `GOOGLE_GENAI_USE_VERTEXAI` | Route Gemini calls through Vertex AI (`true`) or the public GenAI API (`false`) | Yes | `true` |
 | `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID used for Vertex AI | Yes (when `GOOGLE_GENAI_USE_VERTEXAI=true`) | — |
 | `COMPUTE_DEVICE` | Coqui TTS device: `cpu`, `cuda`, or `mps` | No | `cpu` |
+| `TTS_MODEL` | Coqui TTS model name used by `tts_node` | No | `tts_models/multilingual/multi-dataset/xtts_v2` |
 
 ## Agent Workflow
 

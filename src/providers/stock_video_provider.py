@@ -1,7 +1,7 @@
 import random
 from pathlib import Path
 
-from config import MEDIA_ROOT
+from config import settings
 from providers.video_provider import VideoRequest
 
 VALID_CATEGORIES: frozenset[str] = frozenset(
@@ -19,8 +19,8 @@ VALID_CATEGORIES: frozenset[str] = frozenset(
 
 
 class StockVideoProvider:
-    def __init__(self, root: Path = MEDIA_ROOT) -> None:
-        self.root = root
+    def __init__(self, root: Path | None = None) -> None:
+        self.root = root if root is not None else settings.media_root
 
     def get_video(self, request: VideoRequest) -> Path:
         if request.category not in VALID_CATEGORIES:
