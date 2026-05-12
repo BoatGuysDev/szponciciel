@@ -52,7 +52,7 @@ Copy `.env.example` to `.env` and fill in the values. The variables:
 
 | Variable | Purpose | Required | Default |
 |---|---|---|---|
-| `DATABASE_URL` | Full SQLAlchemy URL. Test runs are pinned to `sqlite:///:memory:` by `src/tests/conftest.py` regardless of this value | No | `sqlite:///szponciciel.db` |
+| `DATABASE_URL` | Full SQLAlchemy URL. Required (no implicit default). Test runs are pinned to `sqlite:///:memory:` by `src/tests/conftest.py` regardless of this value | Yes | — |
 | `RUN_MODE` | Application mode flag for non-DB behaviours (logging defaults, etc.). Valid values: `development`, `test`, `production` | No | `development` |
 | `ZERNIO_API_KEY` | API key for publishing videos via Zernio | Yes | — |
 | `GROUND_TRUTH_MEDIA_ACCOUNT_ID` | TikTok account ID assigned to the ground-truth persona during DB seeding | Yes (for seeding) | — |

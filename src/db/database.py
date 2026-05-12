@@ -12,18 +12,21 @@ _engine: Engine | None = None
 load_dotenv()
 
 
-DEFAULT_DATABASE_URL = "sqlite:///szponciciel.db"
-
-
 def database_url() -> str:
-    """Resolve the SQLAlchemy URL from `DATABASE_URL`, with a project default.
+    """Resolve the SQLAlchemy URL from `DATABASE_URL`.
 
-    The test suite pins this to an in-memory SQLite via
-    `src/tests/conftest.py`, so production code stays free of test-aware
-    branching.
+    Required — there is no implicit default. The test suite pins this to
+    `sqlite:///:memory:` via `src/tests/conftest.py`, so production code
+    stays free of test-aware branching.
     """
 
-    return os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL)
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        raise RuntimeError(
+            "DATABASE_URL is not set. Copy .env.example to .env or export it "
+            "in your environment."
+        )
+    return url
 
 
 def get_engine() -> Engine:

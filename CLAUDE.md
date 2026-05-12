@@ -36,7 +36,7 @@ Each node in `src/nodes/` accepts `PersonaRunState` and returns a partial state 
 
 ### Database
 
-SQLite via SQLModel + Alembic. Engine URL comes from `DATABASE_URL` (default `sqlite:///szponciciel.db`). `src/tests/conftest.py` pins the test session to `sqlite:///:memory:` and refuses to run if anything else is resolved. `reset_db()` drops and recreates all tables before each test.
+SQLite via SQLModel + Alembic. Engine URL comes from `DATABASE_URL` (required — no implicit default; see `.env.example`). `src/tests/conftest.py` pins the test session to `sqlite:///:memory:` and refuses to run if anything else is resolved. `reset_db()` drops and recreates all tables before each test.
 
 ### LLM
 
