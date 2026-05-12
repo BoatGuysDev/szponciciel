@@ -82,6 +82,11 @@ jobs:
 
   migrations:
     runs-on: ubuntu-latest
+    env:
+      # Override workflow-level RUN_MODE=test so alembic uses a real SQLite file
+      # instead of the in-memory engine used by the test suite.
+      RUN_MODE: development
+      DB_PATH: /tmp/ci-smoke.db
     steps:
       - uses: actions/checkout@v6
 
@@ -101,10 +106,8 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked
 
-      - name: Migration drift check (alembic check)
-        run: uv run alembic check
-
       - name: Migration smoke test (alembic upgrade head)
         run: uv run alembic upgrade head
-        env:
-          DB_PATH: /tmp/ci-smoke.db
+
+      - name: Migration drift check (alembic check)
+        run: uv run alembic check
