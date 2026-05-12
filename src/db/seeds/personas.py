@@ -1,8 +1,8 @@
 import os
 
-from src.models import Persona
+from models import Persona
 
-from ._utils import seed_records
+from db.seeds._utils import seed_records
 
 
 def load() -> int:

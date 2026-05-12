@@ -5,11 +5,11 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
 from langchain.messages import HumanMessage
 
-from src.db import get_engine
-from src.models import Run, Persona
+from db import get_engine
+from models import Run, Persona
 
-from .system_prompt import NARRATOR_SYSTEM_PROMPT
-from ..state import PersonaRunState
+from nodes.narrator_node.system_prompt import NARRATOR_SYSTEM_PROMPT
+from nodes.state import PersonaRunState
 
 
 def narrator_node(state: PersonaRunState) -> dict[str, str | bool]:

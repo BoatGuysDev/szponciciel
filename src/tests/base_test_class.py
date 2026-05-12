@@ -6,7 +6,7 @@ from sqlalchemy import Engine
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv
 
-from src.db import get_engine, reset_db
+from db import get_engine, reset_db
 
 load_dotenv()
 

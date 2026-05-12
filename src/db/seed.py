@@ -1,13 +1,13 @@
 from dotenv import load_dotenv
 
-from .database import init_db
+from db.database import init_db
 
 
 def seed_all() -> None:
     load_dotenv()
     init_db()
 
-    import src.db.seeds as _seeds
+    import db.seeds as _seeds
 
     for name in _seeds.__all__:
         module = getattr(_seeds, name)
