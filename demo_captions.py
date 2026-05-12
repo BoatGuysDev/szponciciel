@@ -45,6 +45,10 @@ print(f"  got {len(words)} word timings")
 
 # --- 3. Pick a random stock video and compose ---
 all_clips = list(Path("media").rglob("*.mp4"))
+if not all_clips:
+    raise FileNotFoundError(
+        "No .mp4 files found in media/. Add stock clips before running."
+    )
 bg_path = random.choice(all_clips)
 print(f"\nStep 3/3 — composing with {bg_path}…")
 compose(bg_path, audio_path, words, out_path)

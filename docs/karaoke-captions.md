@@ -6,7 +6,7 @@
 
 ## Pipeline
 
-```
+```text
 speech.wav
   → transcribe_and_align()   WhisperX: transcription + forced alignment → list[Word]
   → group_words()            group into 2-3 word Chunks

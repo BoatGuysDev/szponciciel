@@ -250,6 +250,8 @@ def fit_vertical(clip):
 def loop_to_duration(clip, duration: float):
     from moviepy.video.compositing.CompositeVideoClip import concatenate_videoclips
 
+    if clip.duration <= 0:
+        raise ValueError(f"clip.duration must be positive, got {clip.duration}")
     if clip.duration >= duration:
         return clip.subclipped(0, duration)
 

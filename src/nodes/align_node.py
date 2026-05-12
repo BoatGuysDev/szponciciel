@@ -1,15 +1,10 @@
 from pathlib import Path
+from typing import TypedDict
 
 from config import COMPUTE_DEVICE, WHISPER_MODEL
 from merge_captions import transcribe_and_align
 
-from nodes.state import PersonaRunState
-
-
-class WordTiming(TypedDict):
-    text: str
-    start: float
-    end: float
+from nodes.state import PersonaRunState, WordTiming
 
 
 class AlignResult(TypedDict, total=False):
@@ -19,7 +14,13 @@ class AlignResult(TypedDict, total=False):
 
 
 def align_node(state: PersonaRunState) -> AlignResult:
-    audio_path = Path(state["audio_path"])
+    audio_path_value = state.get("audio_path")
+    if not audio_path_value:
+        return {
+            "is_fatal_error": True,
+            "error_message": f"Audio file not found: {audio_path_value}",
+        }
+    audio_path = Path(audio_path_value)
     if not audio_path.is_file():
         return {
             "is_fatal_error": True,

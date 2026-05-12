@@ -6,6 +6,12 @@ def persona_run_dir(state: "PersonaRunState") -> Path:
     return Path("runs") / state["run_id"] / state["persona_id"]
 
 
+class WordTiming(TypedDict):
+    text: str
+    start: float
+    end: float
+
+
 class PersonaRunState(TypedDict):
     run_id: str
     persona_id: str
@@ -14,7 +20,7 @@ class PersonaRunState(TypedDict):
     narration: str
     tiktok_caption: str
     hashtags: list[str]
-    word_timings: list[dict]  # each dict: {"text": str, "start": float, "end": float}
+    word_timings: list[WordTiming]
     audio_path: str  # runs/{run_id}/{persona_id}/speech.wav
     video_category: str
     background_video_path: str

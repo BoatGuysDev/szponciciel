@@ -19,7 +19,7 @@ _tts: TTS | None = None
 def _sanitize_for_tts(text: str) -> str:
     # XTTS v2 vocalizes single periods as "dot"; replace with ellipsis which produces
     # a natural pause without being spoken
-    return re.sub(r"\.(\s+|$)", r"...\1", text)
+    return re.sub(r"\.(?!\.)(\s+|$)", r"...\1", text)
 
 
 def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
@@ -56,13 +56,12 @@ def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
         )  # If None, the TTS model will choose a default speaker for the language
 
     global _tts
-    if _tts is None:
-        _tts = TTS(
-            model_name="tts_models/multilingual/multi-dataset/xtts_v2",
-            progress_bar=True,
-        ).to(COMPUTE_DEVICE)
-
     try:
+        if _tts is None:
+            _tts = TTS(
+                model_name="tts_models/multilingual/multi-dataset/xtts_v2",
+                progress_bar=True,
+            ).to(COMPUTE_DEVICE)
         _tts.tts_to_file(**kwargs)
     except Exception as e:
         log.exception("TTS generation failed")

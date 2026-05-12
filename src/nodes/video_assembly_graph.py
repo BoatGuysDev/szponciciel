@@ -9,10 +9,11 @@ from nodes.state import PersonaRunState
 
 
 def _route_captions(state: PersonaRunState) -> str:
+    pid = state.get("persona_id")
+    if not pid:
+        return "compose_simple_node"
     with Session(get_engine()) as session:
-        persona = session.exec(
-            select(Persona).where(Persona.id == state["persona_id"])
-        ).first()
+        persona = session.exec(select(Persona).where(Persona.id == pid)).first()
     return "caption" if (persona and persona.show_captions) else "compose_simple_node"
 
 

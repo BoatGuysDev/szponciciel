@@ -64,7 +64,7 @@ class TestAlignNode(BaseTestClass):
         self.mock_transcribe.assert_called_once_with(
             audio_file, device=COMPUTE_DEVICE, model_size=WHISPER_MODEL
         )
-        assert result.get("is_fatal_error") is None
+        assert not result.get("is_fatal_error")
         assert result["word_timings"] == _EXPECTED_TIMINGS
 
     def test_transcription_error(self, graph: StateGraph, tmp_path):
