@@ -25,6 +25,7 @@ class Settings(BaseSettings):
 
     compute_device: str = "cpu"
     whisper_model: str = "base"
+    tts_model: str = "tts_models/multilingual/multi-dataset/xtts_v2"
     llm_model: str = Field(default="gemini-2.5-flash-lite", validation_alias="MODEL")
 
     zernio_api_key: str | None = None

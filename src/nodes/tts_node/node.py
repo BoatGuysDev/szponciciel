@@ -56,7 +56,7 @@ def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
     try:
         if _tts is None:
             _tts = TTS(
-                model_name="tts_models/multilingual/multi-dataset/xtts_v2",
+                model_name=settings.tts_model,
                 progress_bar=True,
             ).to(settings.compute_device)
         _tts.tts_to_file(**kwargs)
