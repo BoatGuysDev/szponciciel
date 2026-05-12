@@ -6,6 +6,7 @@ import sqlmodel.sql.sqltypes
 from alembic import context
 from sqlmodel import SQLModel
 
+from config import settings
 import models  # noqa: F401
 
 from db.database import get_engine
@@ -19,7 +20,7 @@ target_metadata = SQLModel.metadata
 
 
 def _db_url() -> str:
-    db_path = Path(os.getenv("DB_PATH", "szponciciel.db"))
+    db_path = Path(settings.db_path)
     return f"sqlite:///{db_path}"
 
 
