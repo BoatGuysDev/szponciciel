@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import TypedDict
 
-from config import COMPUTE_DEVICE, WHISPER_MODEL
+from config import settings
 from merge_captions import transcribe_and_align
 
 from nodes.state import PersonaRunState, WordTiming
@@ -29,7 +29,9 @@ def align_node(state: PersonaRunState) -> AlignResult:
 
     try:
         words = transcribe_and_align(
-            audio_path, device=COMPUTE_DEVICE, model_size=WHISPER_MODEL
+            audio_path,
+            device=settings.compute_device,
+            model_size=settings.whisper_model,
         )
     except Exception as e:
         return {

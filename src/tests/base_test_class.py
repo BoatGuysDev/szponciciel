@@ -1,16 +1,11 @@
-import os
 from abc import ABC, abstractmethod
 
 import pytest
 from sqlalchemy import Engine
 from langgraph.graph import StateGraph
-from dotenv import load_dotenv
 
+from config import settings
 from db import get_engine, reset_db
-
-load_dotenv()
-
-RUN_MODE = os.getenv("RUN_MODE")
 
 
 class BaseTestClass(ABC):
@@ -26,7 +21,7 @@ class BaseTestClass(ABC):
     def setup_db(self) -> Engine:
         """Fixture to set up the database for each test."""
 
-        if RUN_MODE != "test":
+        if settings.run_mode != "test":
             raise Exception(
                 "Tests must be run in test mode. Set RUN_MODE=test in your environment variables."
             )

@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import TypedDict
 
 from sqlmodel import select, Session
@@ -8,6 +7,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
 from langchain.messages import HumanMessage
 
+from src.config import settings
 from src.db import get_engine
 from src.models import Persona
 from .response_format import CaptionAgentResponseFormat
@@ -72,7 +72,7 @@ def caption_node(state: PersonaRunState) -> CaptionResult:
         return result
 
     agent = create_agent(
-        model=ChatGoogleGenerativeAI(model=os.getenv("MODEL", "gemini-2.5-flash-lite")),
+        model=ChatGoogleGenerativeAI(model=settings.llm_model),
         system_prompt=CAPTION_SYSTEM_PROMPT,
         response_format=CaptionAgentResponseFormat,
     )

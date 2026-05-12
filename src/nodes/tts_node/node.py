@@ -3,14 +3,11 @@ import re
 
 from sqlmodel import Session, select
 from TTS.api import TTS
-from dotenv import load_dotenv
 
-from config import COMPUTE_DEVICE
+from config import settings
 from db import get_engine
 from models import Persona
 from nodes.state import PersonaRunState, persona_run_dir
-
-load_dotenv()
 
 log = logging.getLogger(__name__)
 _tts: TTS | None = None
@@ -61,7 +58,7 @@ def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
             _tts = TTS(
                 model_name="tts_models/multilingual/multi-dataset/xtts_v2",
                 progress_bar=True,
-            ).to(COMPUTE_DEVICE)
+            ).to(settings.compute_device)
         _tts.tts_to_file(**kwargs)
     except Exception as e:
         log.exception("TTS generation failed")
