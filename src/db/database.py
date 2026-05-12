@@ -16,19 +16,14 @@ DEFAULT_DATABASE_URL = "sqlite:///szponciciel.db"
 
 
 def database_url() -> str:
-    """Resolve the SQLAlchemy URL.
+    """Resolve the SQLAlchemy URL from `DATABASE_URL`, with a project default.
 
-    `DATABASE_URL` wins when set. Otherwise `RUN_MODE=test` selects an
-    in-memory SQLite engine, and everything else falls back to the
-    project's default on-disk SQLite file.
+    The test suite pins this to an in-memory SQLite via
+    `src/tests/conftest.py`, so production code stays free of test-aware
+    branching.
     """
 
-    url = os.getenv("DATABASE_URL")
-    if url:
-        return url
-    if os.getenv("RUN_MODE", "development") == "test":
-        return "sqlite:///:memory:"
-    return DEFAULT_DATABASE_URL
+    return os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL)
 
 
 def get_engine() -> Engine:
@@ -40,6 +35,15 @@ def get_engine() -> Engine:
             connect_args={"check_same_thread": False},
         )
     return _engine
+
+
+def reset_engine() -> None:
+    """Drop the cached engine. Used by test setup and rare reload scenarios."""
+
+    global _engine
+    if _engine is not None:
+        _engine.dispose()
+        _engine = None
 
 
 def reset_db() -> None:

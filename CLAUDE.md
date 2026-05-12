@@ -1,8 +1,8 @@
 ## Commands
 
 ```bash
-# Tests require RUN_MODE=test (BaseTestClass raises otherwise)
-RUN_MODE=test uv run pytest
+# Run the test suite (src/tests/conftest.py pins it to in-memory SQLite)
+uv run pytest
 
 # Apply DB migrations
 uv run alembic upgrade head
@@ -36,7 +36,7 @@ Each node in `src/nodes/` accepts `PersonaRunState` and returns a partial state 
 
 ### Database
 
-SQLite via SQLModel + Alembic. Dev DB file: `szponciciel.db`. Tests use an in-memory SQLite DB — tests **must** run with `RUN_MODE=test` or the base class raises immediately. `reset_db()` drops and recreates all tables before each test.
+SQLite via SQLModel + Alembic. Engine URL comes from `DATABASE_URL` (default `sqlite:///szponciciel.db`). `src/tests/conftest.py` pins the test session to `sqlite:///:memory:` and refuses to run if anything else is resolved. `reset_db()` drops and recreates all tables before each test.
 
 ### LLM
 
@@ -46,5 +46,6 @@ Nodes use `ChatGoogleGenerativeAI` (Gemini, `gemini-2.5-flash-lite`). Auth via G
 
 Tests live in `src/tests/`. Conventions:
 
-- **`base_test_class.py`** — `BaseTestClass(ABC)`: enforces `RUN_MODE=test`, calls `reset_db()` before every test, and provides the `engine` fixture.
+- **`conftest.py`** — pins `DATABASE_URL=sqlite:///:memory:` for the entire session and asserts the resolution in `pytest_configure`.
+- **`base_test_class.py`** — `BaseTestClass(ABC)`: calls `reset_db()` before every test and provides the `engine` fixture.
 - **`test_{node_name}.py`** — one file per node; one class `Test{NodeName}(BaseTestClass)` per file. Each class provides a `graph` pytest fixture that wires a minimal `StateGraph` with just the node under test (START → node → END). Patch LLM/external calls at the node's import path. See existing test files for the exact shape.
