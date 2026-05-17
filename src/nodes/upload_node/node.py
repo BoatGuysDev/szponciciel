@@ -3,12 +3,11 @@ from pathlib import Path
 import time
 from typing import TypedDict
 
-
 from zernio import Zernio, ZernioAPIError
 from sqlmodel import Session, select
+
 from db import get_engine
 from models import Persona
-
 from nodes.state import PersonaRunState
 
 client = Zernio()
@@ -19,7 +18,7 @@ class UploadResult(TypedDict, total=False):
     error_message: str | None
 
 
-def tiktok_upload_video(state: PersonaRunState) -> UploadResult:
+def upload_node(state: PersonaRunState) -> UploadResult:
     with Session(get_engine()) as session:
         persona = session.exec(
             select(Persona).where(Persona.id == state["persona_id"])
