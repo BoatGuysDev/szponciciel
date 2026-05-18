@@ -1,4 +1,5 @@
 import requests
+from requests import RequestException
 from pathlib import Path
 import time
 from typing import TypedDict
@@ -57,11 +58,27 @@ def upload_node(state: PersonaRunState) -> UploadResult:
             "is_fatal_error": True,
             "error_message": f"File not found: {video_path}",
         }
+    elif not video_path.is_file():
+        return {
+            "is_fatal_error": True,
+            "error_message": f"Not a file: {video_path}",
+        }
+    elif video_path.suffix.lower() != ".mp4":
+        return {
+            "is_fatal_error": True,
+            "error_message": f"Invalid file type: {video_path.suffix}",
+        }
 
-    with video_path.open("rb") as f:
-        upload_video_response = requests.put(
-            upload_url, data=f.read(), headers={"Content-Type": "video/mp4"}
-        )
+    try:
+        with video_path.open("rb") as f:
+            upload_video_response = requests.put(
+                upload_url, data=f.read(), headers={"Content-Type": "video/mp4"}
+            )
+    except RequestException as e:
+        return {
+            "is_fatal_error": True,
+            "error_message": f"Request error: {e}",
+        }
 
     if not upload_video_response.ok:
         return {

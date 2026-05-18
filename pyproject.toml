@@ -42,6 +42,3 @@ exclude = [
 [tool.pytest.ini_options]
 testpaths = ["src/tests"]
 pythonpath = ["src"]
-
-[tool.pylance]
-extraPaths = ["src"]

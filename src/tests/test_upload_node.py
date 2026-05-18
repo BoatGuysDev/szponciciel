@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from langgraph.graph import StateGraph, START, END
 from sqlmodel import Session
+from requests import RequestException
 
 from db import get_engine
 from models import Persona
@@ -45,6 +46,8 @@ class TestUploadNode(BaseTestClass):
         with patch("nodes.upload_node.node.Path") as mock_path_cls:
             mock_path = MagicMock()
             mock_path.exists.return_value = True
+            mock_path.is_file.return_value = True
+            mock_path.suffix = ".mp4"
             mock_path.open.return_value = MagicMock()
 
             mock_path_cls.return_value = mock_path
@@ -123,13 +126,12 @@ class TestUploadNode(BaseTestClass):
             session.commit()
 
         result = graph.compile().invoke(self._base_state())
-        print(result)
 
         assert result["is_fatal_error"] is True
         assert "File not found" in result["error_message"]
         self.mock_put.assert_not_called()
 
-    def test_s3_upload_failure(self, graph: StateGraph):
+    def test_put_upload_failure(self, graph: StateGraph):
         self.mock_put.return_value.ok = False
         self.mock_put.return_value.text = "403 Forbidden"
 
@@ -141,6 +143,19 @@ class TestUploadNode(BaseTestClass):
 
         assert result["is_fatal_error"] is True
         assert "Failed to upload video" in result["error_message"]
+        self.mock_client.posts.create.assert_not_called()
+
+    def test_put_upload_network_failure(self, graph: StateGraph):
+        self.mock_put.side_effect = RequestException("Network error")
+
+        with Session(get_engine()) as session:
+            session.add(self._make_persona())
+            session.commit()
+
+        result = graph.compile().invoke(self._base_state())
+
+        assert result["is_fatal_error"] is True
+        assert "Request error" in result["error_message"]
         self.mock_client.posts.create.assert_not_called()
 
     def test_create_post_failure(self, graph: StateGraph):
