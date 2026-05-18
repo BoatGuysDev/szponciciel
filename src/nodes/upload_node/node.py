@@ -8,14 +8,16 @@ from sqlmodel import Session, select
 
 from db import get_engine
 from models import Persona
+from config import settings
 from nodes.state import PersonaRunState
-
-client = Zernio()
 
 
 class UploadResult(TypedDict, total=False):
     is_fatal_error: bool
     error_message: str | None
+
+
+_client: Zernio | None = None
 
 
 def upload_node(state: PersonaRunState) -> UploadResult:
@@ -32,8 +34,12 @@ def upload_node(state: PersonaRunState) -> UploadResult:
 
     filename = f"{state['run_id']}_{state['persona_id']}_{time.time_ns()}.mp4"
 
+    global _client
+    if _client is None:
+        _client = Zernio(api_key=settings.zernio_api_key)
+
     try:
-        presigned_result = client.media.get_media_presigned_url(
+        presigned_result = _client.media.get_media_presigned_url(
             filename=filename, content_type="video/mp4"
         )
     except ZernioAPIError as e:
@@ -64,7 +70,7 @@ def upload_node(state: PersonaRunState) -> UploadResult:
         }
 
     try:
-        client.posts.create(
+        _client.posts.create(
             media_items=[{"url": public_url, "type": "video"}],
             content=state["tiktok_caption"],
             hashtags=state["hashtags"],

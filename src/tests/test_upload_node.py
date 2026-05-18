@@ -22,7 +22,7 @@ class TestUploadNode(BaseTestClass):
 
     @pytest.fixture(autouse=True)
     def mock_zernio_client(self):
-        with patch("nodes.upload_node.node.client") as mock_client:
+        with patch("nodes.upload_node.node._client") as mock_client:
             mock_client.media.get_media_presigned_url.return_value = {
                 "uploadUrl": "https://s3.example.com/upload",
                 "publicUrl": "https://cdn.example.com/video.mp4",
