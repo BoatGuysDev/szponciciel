@@ -28,7 +28,7 @@ class TestUploadNode(BaseTestClass):
                 "uploadUrl": "https://s3.example.com/upload",
                 "publicUrl": "https://cdn.example.com/video.mp4",
             }
-            mock_client.posts.create.return_value = {"id": "post-123"}
+            mock_client.posts.create.return_value.post = {"_id": "post-123"}
             self.mock_client = mock_client
             yield mock_client
 
@@ -84,6 +84,7 @@ class TestUploadNode(BaseTestClass):
 
         assert result.get("is_fatal_error") is None
         assert result.get("error_message") is None
+        assert result.get("tiktok_post_id") == "post-123"
         self.mock_client.media.get_media_presigned_url.assert_called_once()
         self.mock_put.assert_called_once()
         self.mock_client.posts.create.assert_called_once_with(
