@@ -3,8 +3,8 @@ from sqlmodel import Session, select
 
 from db import get_engine
 from models import Persona
-from nodes.caption_graph import build_caption_graph
-from nodes.compose_simple_node import compose_simple_node
+from graphs.caption_graph.graph import build_caption_graph
+from nodes.compose_node.simple_node import compose_simple_node
 from nodes.state import PersonaRunState
 
 

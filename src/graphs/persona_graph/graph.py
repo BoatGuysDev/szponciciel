@@ -3,7 +3,7 @@ from langgraph.graph import END, START, StateGraph
 from nodes.narrator_node import narrator_node
 from nodes.state import PersonaRunState
 from nodes.tts_node import tts_node
-from nodes.video_assembly_graph import build_video_assembly_graph
+from graphs.video_assembly_graph.graph import build_video_assembly_graph
 
 
 def build_persona_graph():

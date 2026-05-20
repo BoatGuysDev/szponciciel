@@ -1,7 +1,7 @@
 from langgraph.graph import END, START, StateGraph
 
-from nodes.align_node import align_node
-from nodes.compose_node import compose_node
+from nodes.align_node.node import align_node
+from nodes.compose_node.node import compose_node
 from nodes.state import PersonaRunState
 
 
