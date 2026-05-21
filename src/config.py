@@ -32,5 +32,8 @@ class Settings(BaseSettings):
     google_genai_use_vertexai: bool | None = None
     google_cloud_project: str | None = None
 
+    writer_critic_max_iters: int = 3
+    script_reliability_threshold: float = 0.8
+
 
 settings = Settings()
