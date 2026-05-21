@@ -28,12 +28,14 @@ class Settings(BaseSettings):
     llm_model: str = Field(default="gemini-2.5-flash-lite", validation_alias="MODEL")
 
     zernio_api_key: str | None = None
+    tavily_api_key: str | None = None
     ground_truth_media_account_id: str | None = None
     google_genai_use_vertexai: bool | None = None
     google_cloud_project: str | None = None
 
     writer_critic_max_iters: int = 3
     script_reliability_threshold: float = 0.8
+    max_script_length: int = 8000
 
 
 settings = Settings()

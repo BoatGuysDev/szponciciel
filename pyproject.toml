@@ -13,6 +13,7 @@ dependencies = [
     "coqui-tts>=0.27.5",
     "langchain>=1.2.15",
     "langchain-google-genai>=4.2.2",
+    "langchain-tavily>=0.2.18",
     "langgraph>=1.1.9",
     "moviepy>=2.2.1",
     "pydantic-settings>=2.14.1",

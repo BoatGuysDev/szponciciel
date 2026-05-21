@@ -8,7 +8,7 @@ from models import Run, Persona
 
 from nodes.state import PersonaRunState
 from graphs.writer_critic_graph.state import WriterCriticState
-# from nodes.writer_node.node import writer_node
+from nodes.writer_node.node import writer_node
 # from nodes.critic_node.node import critic_node
 
 
@@ -20,7 +20,7 @@ class WriterCriticResult(TypedDict, total=False):
 def _build_graph():
     graph_builder = StateGraph(WriterCriticState)
 
-    # graph_builder.add_node(writer_node)
+    graph_builder.add_node(writer_node)
     # graph_builder.add_node(critic_node)
 
     graph_builder.add_edge(START, "writer_node")
