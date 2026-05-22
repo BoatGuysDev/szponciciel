@@ -20,7 +20,7 @@ class CriticResult(TypedDict, total=False):
 
 
 def critic_node(state: WriterCriticState) -> CriticResult:
-    """Reviews the draft script and returns a reliability score and corrections."""
+    """Reviews the draft script and produces a summary with scores and corrections."""
 
     agent = create_agent(
         model=ChatGoogleGenerativeAI(model=settings.llm_model),
