@@ -17,17 +17,8 @@ class WriterCriticResult(TypedDict, total=False):
     error_message: str | None
 
 
-def _build_graph():
-    graph_builder = StateGraph(WriterCriticState)
-
-    graph_builder.add_node(writer_node)
-    graph_builder.add_node(critic_node)
-
-    graph_builder.add_edge(START, "writer_node")
-    graph_builder.add_edge("writer_node", "critic_node")
-    graph_builder.add_conditional_edges("critic_node", _router)
-
-    return graph_builder.compile()
+def _writer_router(state: WriterCriticState) -> str:
+    return END if state["is_fatal_error"] else "critic_node"
 
 
 def _reliability_score(review: Review) -> float:
@@ -39,7 +30,7 @@ def _reliability_score(review: Review) -> float:
     ) / 4
 
 
-def _router(state: WriterCriticState) -> str:
+def _critic_router(state: WriterCriticState) -> str:
     if (
         state["is_fatal_error"]
         or state["iterations"] == settings.writer_critic_max_iters
@@ -48,6 +39,19 @@ def _router(state: WriterCriticState) -> str:
         return END
     else:
         return "writer_node"
+
+
+def _build_graph():
+    graph_builder = StateGraph(WriterCriticState)
+
+    graph_builder.add_node(writer_node)
+    graph_builder.add_node(critic_node)
+
+    graph_builder.add_edge(START, "writer_node")
+    graph_builder.add_conditional_edges("writer_node", _writer_router)
+    graph_builder.add_conditional_edges("critic_node", _critic_router)
+
+    return graph_builder.compile()
 
 
 def writer_critic_graph(state: PersonaRunState) -> WriterCriticResult:
