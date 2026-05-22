@@ -1,6 +1,14 @@
 from typing import TypedDict
 
 
+class Review(TypedDict):
+    coherence_score: float
+    grammar_score: float
+    unambiguity_score: float
+    catchiness_score: float
+    corrections: str
+
+
 class WriterCriticState(TypedDict):
     article_url: str
     article_title: str
@@ -11,8 +19,7 @@ class WriterCriticState(TypedDict):
     real_news_ratio: float
 
     draft_script: str | None
-    reliability_score: float | None
-    corrections: str | None
+    review: Review | None
     iterations: int
 
     is_fatal_error: bool

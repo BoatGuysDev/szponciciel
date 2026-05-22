@@ -17,8 +17,7 @@ BASE_STATE: WriterCriticState = {
     "persona_tone": "serious",
     "real_news_ratio": 0.8,
     "draft_script": None,
-    "reliability_score": None,
-    "corrections": None,
+    "review": None,
     "iterations": 0,
     "is_fatal_error": False,
     "error_message": None,
@@ -68,7 +67,13 @@ class TestWriterNode(BaseTestClass):
         state = {
             **BASE_STATE,
             "draft_script": draft_script,
-            "corrections": corrections,
+            "review": {
+                "coherence_score": 0.7,
+                "grammar_score": 0.8,
+                "unambiguity_score": 0.6,
+                "catchiness_score": 0.5,
+                "corrections": corrections,
+            },
             "iterations": 1,
         }
         mock_agent = self._mock_agent("Revised script here.")

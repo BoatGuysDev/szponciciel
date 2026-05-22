@@ -44,8 +44,8 @@ Style: {state["persona_style"]}
 Tone: {state["persona_tone"]}
 Real news ratio: {state["real_news_ratio"]}"""
 
-    if state["corrections"]:
-        prompt += f"\n\nIncorporate the following corrections from the previous draft:\n{state['corrections']}"
+    if state["review"] and state["review"]["corrections"]:
+        prompt += f"\n\nIncorporate the following corrections from the previous draft:\n{state['review']['corrections']}"
         prompt += f"\n\nPrevious draft script:\n{state['draft_script']}"
 
     try:
