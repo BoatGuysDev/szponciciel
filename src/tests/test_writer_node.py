@@ -2,8 +2,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 from langgraph.graph import StateGraph, START, END
 
-from nodes.writer_node.node import writer_node
-from graphs.writer_critic_graph.state import WriterCriticState
+from nodes.writer_critic_graph.writer_node.node import writer_node
+from nodes.writer_critic_graph.state import WriterCriticState
 from config import settings
 
 from tests.base_test_class import BaseTestClass
@@ -49,8 +49,11 @@ class TestWriterNode(BaseTestClass):
         mock_agent = self._mock_agent(expected_script)
 
         with (
-            patch("nodes.writer_node.node.ChatGoogleGenerativeAI"),
-            patch("nodes.writer_node.node.create_agent", return_value=mock_agent),
+            patch("nodes.writer_critic_graph.writer_node.node.ChatGoogleGenerativeAI"),
+            patch(
+                "nodes.writer_critic_graph.writer_node.node.create_agent",
+                return_value=mock_agent,
+            ),
         ):
             result = graph.compile().invoke(BASE_STATE)
 
@@ -71,8 +74,11 @@ class TestWriterNode(BaseTestClass):
         mock_agent = self._mock_agent("Revised script here.")
 
         with (
-            patch("nodes.writer_node.node.ChatGoogleGenerativeAI"),
-            patch("nodes.writer_node.node.create_agent", return_value=mock_agent),
+            patch("nodes.writer_critic_graph.writer_node.node.ChatGoogleGenerativeAI"),
+            patch(
+                "nodes.writer_critic_graph.writer_node.node.create_agent",
+                return_value=mock_agent,
+            ),
         ):
             graph.compile().invoke(state)
 
@@ -89,8 +95,11 @@ class TestWriterNode(BaseTestClass):
         mock_agent = self._mock_agent(long_content)
 
         with (
-            patch("nodes.writer_node.node.ChatGoogleGenerativeAI"),
-            patch("nodes.writer_node.node.create_agent", return_value=mock_agent),
+            patch("nodes.writer_critic_graph.writer_node.node.ChatGoogleGenerativeAI"),
+            patch(
+                "nodes.writer_critic_graph.writer_node.node.create_agent",
+                return_value=mock_agent,
+            ),
         ):
             result = graph.compile().invoke(BASE_STATE)
 
@@ -104,8 +113,11 @@ class TestWriterNode(BaseTestClass):
         mock_agent.invoke.side_effect = RuntimeError("LLM unavailable")
 
         with (
-            patch("nodes.writer_node.node.ChatGoogleGenerativeAI"),
-            patch("nodes.writer_node.node.create_agent", return_value=mock_agent),
+            patch("nodes.writer_critic_graph.writer_node.node.ChatGoogleGenerativeAI"),
+            patch(
+                "nodes.writer_critic_graph.writer_node.node.create_agent",
+                return_value=mock_agent,
+            ),
         ):
             result = graph.compile().invoke(BASE_STATE)
 

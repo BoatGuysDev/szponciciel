@@ -1,3 +1,4 @@
+from typing import TypedDict
 from sqlmodel import select, Session
 
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -12,7 +13,13 @@ from nodes.narrator_node.system_prompt import NARRATOR_SYSTEM_PROMPT
 from nodes.state import PersonaRunState
 
 
-def narrator_node(state: PersonaRunState) -> dict[str, str | bool]:
+class NarratorResult(TypedDict, total=False):
+    narration: str
+    is_fatal_error: bool
+    error_message: str | None
+
+
+def narrator_node(state: PersonaRunState) -> NarratorResult:
     """Adapts the approved script into a narration with specific language and style."""
 
     with Session(get_engine()) as session:

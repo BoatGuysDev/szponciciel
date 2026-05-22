@@ -7,8 +7,8 @@ from db import get_engine
 from models import Run, Persona
 
 from nodes.state import PersonaRunState
-from graphs.writer_critic_graph.state import WriterCriticState
-from nodes.writer_node.node import writer_node
+from nodes.writer_critic_graph.state import WriterCriticState
+from nodes.writer_critic_graph.writer_node.node import writer_node
 # from nodes.critic_node.node import critic_node
 
 

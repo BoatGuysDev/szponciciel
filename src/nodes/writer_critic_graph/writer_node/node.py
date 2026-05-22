@@ -5,9 +5,9 @@ from langchain.agents import create_agent
 from langchain.messages import HumanMessage
 
 from config import settings
-from graphs.writer_critic_graph.state import WriterCriticState
-from nodes.writer_node.system_prompt import WRITER_SYSTEM_PROMPT
-from nodes.writer_node.tools import fetch_article_content
+from nodes.writer_critic_graph.state import WriterCriticState
+from nodes.writer_critic_graph.writer_node.system_prompt import WRITER_SYSTEM_PROMPT
+from nodes.writer_critic_graph.writer_node.tools import fetch_article_content
 
 
 class WriterResult(TypedDict, total=False):

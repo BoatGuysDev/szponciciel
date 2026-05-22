@@ -1,19 +1,17 @@
-from nodes.align_node.node import align_node
-from nodes.caption_node.node import caption_node
-from nodes.compose_node.node import compose_node
-from nodes.compose_node.simple_node import compose_simple_node
+from nodes.writer_critic_graph.graph import writer_critic_graph
 from nodes.narrator_node.node import narrator_node
 from nodes.tts_node.node import tts_node
-from nodes.writer_node.node import writer_node
+from nodes.caption_node.node import caption_node
+from nodes.video_assembly_graph.graph import video_assembly_graph
+from nodes.upload_node.node import upload_node
 from nodes.state import PersonaRunState
 
 __all__ = [
-    "align_node",
-    "caption_node",
-    "compose_node",
-    "compose_simple_node",
+    "writer_critic_graph",
     "narrator_node",
     "tts_node",
-    "writer_node",
+    "caption_node",
+    "video_assembly_graph",
+    "upload_node",
     "PersonaRunState",
 ]

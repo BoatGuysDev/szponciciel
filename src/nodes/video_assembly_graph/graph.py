@@ -21,7 +21,7 @@ def _router(state: PersonaRunState) -> str:
     )
 
 
-def build_video_assembly_graph():
+def video_assembly_graph():
     graph = StateGraph(state_schema=PersonaRunState)
 
     graph.add_node(align_node)
