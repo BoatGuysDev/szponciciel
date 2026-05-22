@@ -26,6 +26,8 @@ Szponciciel is a multi-agent LangGraph pipeline that autonomously generates and 
 
 Each top-level node in `src/nodes/` accepts `PersonaRunState` and returns a partial state dict. Nodes open their own DB sessions via `Session(get_engine())`.
 
+`writer_critic_graph` is a subgraph node whose internal nodes (`writer_node`, `critic_node`) accept a dedicated `WriterCriticState` instead of `PersonaRunState`. See `docs/writer-critic-graph.md`.
+
 ### Video providers
 
 `src/providers/video_provider.py` defines the `VideoProvider` Protocol. `StockVideoProvider` and `AIVideoProvider` implement it. Video is generated once per Run (shared); audio/captions are per Persona.

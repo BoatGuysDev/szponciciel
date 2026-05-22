@@ -53,13 +53,20 @@ Copy `.env.example` to `.env` and fill in the values. The variables:
 | Variable | Purpose | Required | Default |
 |---|---|---|---|
 | `DATABASE_URL` | Full SQLAlchemy URL. Required (no implicit default). Test runs are pinned to `sqlite:///:memory:` by `src/tests/conftest.py` regardless of this value | Yes | — |
-| `RUN_MODE` | Application mode flag for non-DB behaviours (logging defaults, etc.). Valid values: `development`, `test`, `production` | No | `development` |
-| `ZERNIO_API_KEY` | API key for publishing videos via Zernio | Yes | — |
-| `GROUND_TRUTH_MEDIA_ACCOUNT_ID` | TikTok account ID assigned to the ground-truth persona during DB seeding | Yes (for seeding) | — |
-| `GOOGLE_GENAI_USE_VERTEXAI` | Route Gemini calls through Vertex AI (`true`) or the public GenAI API (`false`) | Yes | `true` |
-| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID used for Vertex AI | Yes (when `GOOGLE_GENAI_USE_VERTEXAI=true`) | — |
-| `COMPUTE_DEVICE` | Coqui TTS device: `cpu`, `cuda`, or `mps` | No | `cpu` |
+| `RUN_MODE` | Application mode flag for non-DB behaviours. Valid values: `development`, `test`, `production` | No | `development` |
+| `COMPUTE_DEVICE` | Coqui TTS + WhisperX device: `cpu`, `cuda`, or `mps` | No | `cpu` |
+| `WHISPER_MODEL` | WhisperX model size for `align_node`: `tiny`, `base`, `small`, `medium`, `large-v3` | No | `base` |
 | `TTS_MODEL` | Coqui TTS model name used by `tts_node` | No | `tts_models/multilingual/multi-dataset/xtts_v2` |
+| `MODEL` | Gemini model used by LLM nodes | No | `gemini-2.5-flash-lite` |
+| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID used for Vertex AI | Yes (when `GOOGLE_GENAI_USE_VERTEXAI=true`) | — |
+| `GOOGLE_GENAI_USE_VERTEXAI` | Route Gemini calls through Vertex AI (`true`) or the public GenAI API (`false`) | Yes | `true` |
+| `ZERNIO_API_KEY` | API key for publishing videos via Zernio | Yes | — |
+| `TAVILY_API_KEY` | API key for article content fetching via Tavily | Yes | — |
+| `GROUND_TRUTH_MEDIA_ACCOUNT_ID` | TikTok account ID assigned to the ground-truth persona during DB seeding | Yes (for seeding) | — |
+| `MEDIA_ROOT` | Media root directory for stock video assets | No | `media` |
+| `WRITER_CRITIC_MAX_ITERS` | Maximum writer↔critic loop iterations | No | `3` |
+| `SCRIPT_RELIABILITY_THRESHOLD` | Mean reliability score threshold to exit the writer↔critic loop early | No | `0.8` |
+| `MAX_SCRIPT_LENGTH` | Maximum character length for generated TikTok scripts | No | `8000` |
 
 ## Agent Workflow
 
