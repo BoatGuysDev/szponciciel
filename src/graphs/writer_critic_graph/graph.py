@@ -25,16 +25,16 @@ def _build_graph():
 
     graph_builder.add_edge(START, "writer_node")
     graph_builder.add_edge("writer_node", "critic_node")
-    graph_builder.add_edge("critic_node", _router)
+    graph_builder.add_conditional_edges("critic_node", _router)
 
     return graph_builder.compile()
 
 
 def _router(state: WriterCriticState) -> str:
     if (
-        state["reliability_score"] >= settings.script_reliability_threshold
+        state["is_fatal_error"]
         or state["iterations"] == settings.writer_critic_max_iters
-        or state["is_fatal_error"]
+        or state["reliability_score"] >= settings.script_reliability_threshold
     ):
         return END
     else:
