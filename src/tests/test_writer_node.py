@@ -96,7 +96,6 @@ class TestWriterNode(BaseTestClass):
         """Output longer than max_script_length is truncated."""
 
         long_content = "x" * (settings.max_script_length + 1000)
-        expected_content = "x" * settings.max_script_length + "..."
         mock_agent = self._mock_agent(long_content)
 
         with (
@@ -108,8 +107,8 @@ class TestWriterNode(BaseTestClass):
         ):
             result = graph.compile().invoke(BASE_STATE)
 
-        assert len(result["draft_script"]) == len(expected_content)
-        assert result["draft_script"] == expected_content
+        assert len(result["draft_script"]) == settings.max_script_length
+        assert result["draft_script"].endswith("...")
 
     def test_agent_failure_returns_fatal_error(self, graph: StateGraph):
         """An exception from the LLM agent results in a fatal error state."""

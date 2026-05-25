@@ -38,6 +38,7 @@ class CriticAgentResponseFormat(BaseModel):
         ),
     )
     corrections: str = Field(
+        le=2_000,
         description=(
             "Concrete, actionable feedback the writer can apply on the next "
             "iteration. Empty string when the script passes all rubrics cleanly."

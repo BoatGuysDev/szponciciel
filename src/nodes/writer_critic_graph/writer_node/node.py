@@ -12,7 +12,6 @@ from nodes.writer_critic_graph.writer_node.tools import fetch_article_content
 
 class WriterResult(TypedDict, total=False):
     draft_script: str
-    iterations: int
     is_fatal_error: bool
     error_message: str | None
 

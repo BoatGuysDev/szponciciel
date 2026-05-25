@@ -17,6 +17,8 @@ Score each dimension independently from 0.0 to 1.0:
 
 Provide concrete, actionable feedback the writer can apply on the next iteration. Reference specific lines or phrases when useful. Return an empty string when the script passes all rubrics cleanly.
 
+Do not exceed a limit of 2000 characters for the corrections.
+
 Do not rewrite the script yourself — corrections only.
 
 ## Output
