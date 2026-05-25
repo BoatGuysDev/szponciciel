@@ -21,7 +21,10 @@ def _truncate_script(script: str) -> str:
     if len(script) <= settings.max_script_length:
         return script
 
-    truncated_script = script[: settings.max_script_length].rstrip() + "..."
+    suffix = "..."
+    truncated_script = (
+        script[: settings.max_script_length - len(suffix)].rstrip() + suffix
+    )
     return truncated_script
 
 

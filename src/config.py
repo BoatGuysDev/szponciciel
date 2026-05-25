@@ -35,7 +35,7 @@ class Settings(BaseSettings):
 
     writer_critic_max_iters: int = Field(default=3, ge=1)
     script_reliability_threshold: float = Field(default=0.8, ge=0.0, le=1.0)
-    max_script_length: int = 8_000
+    max_script_length: int = Field(default=8_000, ge=1)
 
 
 settings = Settings()
