@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 from TTS.api import TTS
 
 from config import COMPUTE_DEVICE, WHISPER_MODEL
-from merge_captions import compose, transcribe_and_align
+from nodes.video_assembly_graph.transforms import compose, transcribe_and_align
 from nodes.tts_node import _sanitize_for_tts
 
 TEXT = (

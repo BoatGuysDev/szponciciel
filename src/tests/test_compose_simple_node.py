@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 from langgraph.graph import StateGraph, START, END
 
 from nodes import PersonaRunState
-from nodes.compose_node.simple_node import compose_simple_node
+from nodes.video_assembly_graph.compose_node.simple_node import compose_simple_node
 
 from tests.base_test_class import BaseTestClass
 
@@ -29,16 +29,20 @@ class TestComposeSimpleNode(BaseTestClass):
 
         with (
             patch(
-                "nodes.compose_node.simple_node.AudioFileClip", return_value=mock_audio
+                "nodes.video_assembly_graph.compose_node.simple_node.AudioFileClip",
+                return_value=mock_audio,
             ) as mock_ac,
             patch(
-                "nodes.compose_node.simple_node.VideoFileClip", return_value=mock_bg
+                "nodes.video_assembly_graph.compose_node.simple_node.VideoFileClip",
+                return_value=mock_bg,
             ) as mock_vc,
             patch(
-                "nodes.compose_node.simple_node.fit_vertical", return_value=mock_bg
+                "nodes.video_assembly_graph.compose_node.simple_node.fit_vertical",
+                return_value=mock_bg,
             ) as mock_fv,
             patch(
-                "nodes.compose_node.simple_node.loop_to_duration", return_value=mock_bg
+                "nodes.video_assembly_graph.compose_node.simple_node.loop_to_duration",
+                return_value=mock_bg,
             ) as mock_ld,
         ):
             self.mock_audio_cls = mock_ac

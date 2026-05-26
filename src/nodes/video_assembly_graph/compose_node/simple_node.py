@@ -1,6 +1,10 @@
 from moviepy import AudioFileClip, VideoFileClip
 
-from merge_captions import VIDEO_WRITE_KWARGS, fit_vertical, loop_to_duration
+from nodes.video_assembly_graph.transforms import (
+    VIDEO_WRITE_KWARGS,
+    fit_vertical,
+    loop_to_duration,
+)
 
 from nodes.state import PersonaRunState, persona_run_dir
 

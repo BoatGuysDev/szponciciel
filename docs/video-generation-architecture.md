@@ -22,7 +22,7 @@ ParentGraph (LangGraph StateGraph, SQLite checkpointing)
       ├── tts_node                (Coqui xTTSv2 → speech.wav)
       ├── [if show_captions=True]
       │   ├── align_node          (WhisperX → word timings)
-      │   └── compose_node        (merge_captions.py::compose → karaoke overlay)
+      │   └── compose_node        (video_assembly_graph/transforms.py::compose → karaoke overlay)
       ├── [if show_captions=False]
       │   └── compose_simple_node (audio over video, no overlay)
       └── upload_node             (zernio_service::upload_tiktok_video)
@@ -269,7 +269,7 @@ Two separate caption concerns — do not conflate:
 
 | Type | Description | Where generated |
 |---|---|---|
-| On-screen karaoke | Word-by-word pill overlay burned into video | `align_node` + `compose_node` (WhisperX + `merge_captions.py`) |
+| On-screen karaoke | Word-by-word pill overlay burned into video | `align_node` + `compose_node` (WhisperX + `transforms.py`) |
 | TikTok post caption | Text description + hashtags submitted on upload | `caption_node` (LLM, runs after Narrator) |
 
 `show_captions=False` on a persona skips `align_node` and `compose_node` entirely.

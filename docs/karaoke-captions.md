@@ -1,6 +1,6 @@
 # Karaoke Caption Pipeline
 
-`src/merge_captions.py` — word-level on-screen caption overlay burned into the output video.
+`src/video_assembly_graph/transforms.py` — word-level on-screen caption overlay burned into the output video.
 
 ---
 
@@ -67,7 +67,7 @@ Anton-Regular.ttf must be present at the bundled path for production output.
 
 ## Tuning
 
-All visual constants are at the top of `merge_captions.py`:
+All visual constants are at the top of `transforms.py`:
 
 | Constant | Default | Effect |
 |---|---|---|
