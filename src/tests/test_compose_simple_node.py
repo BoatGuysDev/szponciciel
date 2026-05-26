@@ -29,16 +29,20 @@ class TestComposeSimpleNode(BaseTestClass):
 
         with (
             patch(
-                "nodes.video_assembly_graph.compose_node.simple_node.AudioFileClip", return_value=mock_audio
+                "nodes.video_assembly_graph.compose_node.simple_node.AudioFileClip",
+                return_value=mock_audio,
             ) as mock_ac,
             patch(
-                "nodes.video_assembly_graph.compose_node.simple_node.VideoFileClip", return_value=mock_bg
+                "nodes.video_assembly_graph.compose_node.simple_node.VideoFileClip",
+                return_value=mock_bg,
             ) as mock_vc,
             patch(
-                "nodes.video_assembly_graph.compose_node.simple_node.fit_vertical", return_value=mock_bg
+                "nodes.video_assembly_graph.compose_node.simple_node.fit_vertical",
+                return_value=mock_bg,
             ) as mock_fv,
             patch(
-                "nodes.video_assembly_graph.compose_node.simple_node.loop_to_duration", return_value=mock_bg
+                "nodes.video_assembly_graph.compose_node.simple_node.loop_to_duration",
+                return_value=mock_bg,
             ) as mock_ld,
         ):
             self.mock_audio_cls = mock_ac

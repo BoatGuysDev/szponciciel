@@ -30,7 +30,10 @@ class TestComposeNode(BaseTestClass):
             out_path.write_bytes(b"fake-mp4")
             return out_path
 
-        with patch("nodes.video_assembly_graph.compose_node.node.compose", side_effect=_create_output) as m:
+        with patch(
+            "nodes.video_assembly_graph.compose_node.node.compose",
+            side_effect=_create_output,
+        ) as m:
             self.mock_compose = m
             yield m
 

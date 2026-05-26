@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import TypedDict
 
-from merge_captions import Word, compose
+from nodes.video_assembly_graph.transforms import Word, compose
 
 from nodes.state import PersonaRunState, persona_run_dir
 

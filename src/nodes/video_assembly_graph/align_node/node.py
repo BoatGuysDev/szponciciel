@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import TypedDict
 
 from config import settings
-from merge_captions import transcribe_and_align
+from nodes.video_assembly_graph.transforms import transcribe_and_align
 
 from nodes.state import PersonaRunState, WordTiming
 
