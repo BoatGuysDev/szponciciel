@@ -14,6 +14,7 @@ from nodes.state import PersonaRunState
 
 
 class UploadResult(TypedDict, total=False):
+    tiktok_post_id: str
     is_fatal_error: bool
     error_message: str | None
 
@@ -87,7 +88,7 @@ def upload_node(state: PersonaRunState) -> UploadResult:
         }
 
     try:
-        _client.posts.create(
+        response = _client.posts.create(
             media_items=[{"url": public_url, "type": "video"}],
             content=state["tiktok_caption"],
             hashtags=state["hashtags"],
@@ -100,4 +101,4 @@ def upload_node(state: PersonaRunState) -> UploadResult:
             "error_message": f"Failed to create post: {e}",
         }
 
-    return {}
+    return {"tiktok_post_id": response.post["_id"]}

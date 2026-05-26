@@ -24,7 +24,9 @@ Szponciciel is a multi-agent LangGraph pipeline that autonomously generates and 
 
 ### Node pattern
 
-Each node in `src/nodes/` accepts `PersonaRunState` and returns a partial state dict. Nodes open their own DB sessions via `Session(get_engine())`.
+Each top-level node in `src/nodes/` accepts `PersonaRunState` and returns a partial state dict. Nodes open their own DB sessions via `Session(get_engine())`.
+
+`writer_critic_graph` is a subgraph node whose internal nodes (`writer_node`, `critic_node`) accept a dedicated `WriterCriticState` instead of `PersonaRunState`. See `docs/writer-critic-graph.md`.
 
 ### Video providers
 

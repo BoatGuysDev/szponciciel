@@ -5,7 +5,7 @@ from langgraph.graph import StateGraph, START, END
 from config import settings
 from merge_captions import Word
 from nodes import PersonaRunState
-from nodes.align_node import align_node
+from nodes.align_node.node import align_node
 
 from tests.base_test_class import BaseTestClass
 
@@ -31,7 +31,7 @@ class TestAlignNode(BaseTestClass):
     @pytest.fixture(autouse=True)
     def mock_transcribe(self):
         with patch(
-            "nodes.align_node.transcribe_and_align", return_value=_MOCK_WORDS
+            "nodes.align_node.node.transcribe_and_align", return_value=_MOCK_WORDS
         ) as m:
             self.mock_transcribe = m
             yield m
