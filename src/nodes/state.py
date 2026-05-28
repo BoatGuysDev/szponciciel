@@ -28,3 +28,11 @@ class PersonaRunState(TypedDict):
     tiktok_post_id: str | None
     is_fatal_error: bool
     error_message: str | None
+
+
+class ResearcherState(TypedDict, total=False):
+    run_id: str
+    article_url: str
+    article_title: str
+    is_fatal_error: bool
+    error_message: str | None
