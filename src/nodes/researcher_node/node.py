@@ -1,62 +1,106 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TypedDict
 
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
+from pydantic import BaseModel, Field
 from sqlmodel import Session
 
+from config import settings
 from db import get_engine
 from models import Run
+from nodes.researcher_node.system_prompt import RESEARCHER_SYSTEM_PROMPT
 from nodes.state import ResearcherState
 
 CATEGORIES: list[tuple[str, str]] = [
-    ("AI", "latest artificial intelligence news"),
-    ("Tech", "latest technology startup news"),
-    ("Finance", "latest stock market finance news"),
-    ("Politics", "latest politics government news"),
-    ("World", "latest world international news"),
+    ("AI", "latest artificial intelligence breakthroughs"),
+    ("Tech", "latest technology and startup news"),
+    ("Finance", "latest stock market and finance news"),
+    ("Politics", "latest politics and government news"),
+    ("World", "latest world and international news"),
 ]
 
-_TOPIC_BOOST: dict[str, float] = {
-    "AI": 0.15,
-    "Tech": 0.10,
-    "Finance": 0.05,
-    "Politics": 0.05,
-    "World": 0.00,
-}
+
+class ResearcherResult(TypedDict, total=False):
+    article_url: str
+    article_title: str
+    is_fatal_error: bool
+    error_message: str | None
 
 
-def _virality_score(result: dict, category: str) -> float:
-    tavily_score = float(result.get("score", 0.0))
-    return round(tavily_score * 0.85 + _TOPIC_BOOST.get(category, 0.0), 4)
+class _ScoredArticle(BaseModel):
+    index: int = Field(description="Zero-based index of the candidate.")
+    virality_score: float = Field(ge=0.0, le=1.0)
 
 
-def researcher_node(state: ResearcherState) -> dict[str, Any]:
+class _ArticleRanking(BaseModel):
+    rankings: list[_ScoredArticle]
+
+
+def _fetch_candidates() -> list[dict]:
+    tool = TavilySearch(max_results=5, topic="news", time_range="day")
+    candidates: list[dict] = []
+    seen_urls: set[str] = set()
+
+    for _, query in CATEGORIES:
+        try:
+            response = tool.invoke({"query": query})
+        except Exception:
+            continue
+        articles = response.get("results", []) if isinstance(response, dict) else []
+        for r in articles:
+            url = r.get("url", "")
+            if not url or url in seen_urls:
+                continue
+            seen_urls.add(url)
+            candidates.append({
+                "title": r.get("title", ""),
+                "url": url,
+                "content": r.get("content", ""),
+            })
+
+    return candidates
+
+
+def _score_with_llm(candidates: list[dict]) -> list[dict]:
+    summary = "\n".join(
+        f"[{i}] {c['title']} — {c['content'][:300]}"
+        for i, c in enumerate(candidates)
+    )
+    llm = ChatGoogleGenerativeAI(model=settings.llm_model)
+    structured = llm.with_structured_output(_ArticleRanking)
+    ranking: _ArticleRanking = structured.invoke(
+        f"{RESEARCHER_SYSTEM_PROMPT}\n\nCandidates:\n{summary}"
+    )
+
+    scored: list[dict] = []
+    for entry in ranking.rankings:
+        if 0 <= entry.index < len(candidates):
+            scored.append({**candidates[entry.index], "virality_score": entry.virality_score})
+    return scored
+
+
+def researcher_node(state: ResearcherState) -> ResearcherResult:
+    """Fetches news candidates, scores them by virality with an LLM, and saves the winner to the Run row."""
+
     run_id = state.get("run_id")
     if not run_id:
         return {"is_fatal_error": True, "error_message": "run_id is required"}
 
-    tool = TavilySearch(max_results=5)
-    candidates: list[dict] = []
-
-    for category, query in CATEGORIES:
-        try:
-            response = tool.invoke({"query": query})
-            articles = response.get("results", []) if isinstance(response, dict) else []
-            for r in articles:
-                candidates.append({
-                    "title": r.get("title", ""),
-                    "url": r.get("url", ""),
-                    "virality_score": _virality_score(r, category),
-                    "category": category,
-                })
-        except Exception:
-            continue
-
+    candidates = _fetch_candidates()
     if not candidates:
         return {"is_fatal_error": True, "error_message": "No articles found"}
 
-    best = max(candidates, key=lambda c: c["virality_score"])
+    try:
+        scored = _score_with_llm(candidates)
+    except Exception as exc:
+        return {"is_fatal_error": True, "error_message": f"Scoring error: {exc}"}
+
+    if not scored:
+        return {"is_fatal_error": True, "error_message": "No scored articles"}
+
+    best = max(scored, key=lambda c: c["virality_score"])
 
     try:
         with Session(get_engine()) as session:
@@ -70,6 +114,6 @@ def researcher_node(state: ResearcherState) -> dict[str, Any]:
         return {"is_fatal_error": True, "error_message": f"DB error: {exc}"}
 
     return {
-        "source_article_url": best["url"],
-        "source_article_title": best["title"],
+        "article_url": best["url"],
+        "article_title": best["title"],
     }

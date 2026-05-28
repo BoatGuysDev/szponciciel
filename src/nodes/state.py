@@ -32,7 +32,7 @@ class PersonaRunState(TypedDict):
 
 class ResearcherState(TypedDict, total=False):
     run_id: str
-    source_article_url: str
-    source_article_title: str
+    article_url: str
+    article_title: str
     is_fatal_error: bool
     error_message: str | None
