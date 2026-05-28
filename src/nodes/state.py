@@ -28,3 +28,9 @@ class PersonaRunState(TypedDict):
     tiktok_post_id: str | None
     is_fatal_error: bool
     error_message: str | None
+
+
+class ResearcherState(TypedDict, total=False):
+    results: list[dict]  # [{category, title, url}] — one entry per category
+    is_fatal_error: bool
+    error_message: str | None
