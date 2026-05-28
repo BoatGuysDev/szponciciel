@@ -2,14 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, ValidationError
+from langchain_tavily import TavilySearch
+from sqlmodel import Session
 
+from db import get_engine
+from models import Run
 from nodes.state import ResearcherState
-
-try:
-    from langchain_community.tools.tavily_search import TavilySearchResults as _TavilySearchResults
-except Exception:
-    _TavilySearchResults = None
 
 CATEGORIES: list[tuple[str, str]] = [
     ("AI", "latest artificial intelligence news"),
@@ -19,39 +17,59 @@ CATEGORIES: list[tuple[str, str]] = [
     ("World", "latest world international news"),
 ]
 
+_TOPIC_BOOST: dict[str, float] = {
+    "AI": 0.15,
+    "Tech": 0.10,
+    "Finance": 0.05,
+    "Politics": 0.05,
+    "World": 0.00,
+}
 
-class CategoryResult(BaseModel):
-    category: str
-    title: str
-    url: str
 
-
-def _fetch_top(tool: Any, query: str) -> dict[str, str] | None:
-    try:
-        results = tool.invoke({"query": query})
-        if results:
-            top = results[0]
-            return {"title": top.get("title", ""), "url": top.get("url", "")}
-    except Exception:
-        pass
-    return None
+def _virality_score(result: dict, category: str) -> float:
+    tavily_score = float(result.get("score", 0.0))
+    return round(tavily_score * 0.85 + _TOPIC_BOOST.get(category, 0.0), 4)
 
 
 def researcher_node(state: ResearcherState) -> dict[str, Any]:
-    if _TavilySearchResults is None:
-        return {"is_fatal_error": True, "error_message": "TavilySearchResults not available"}
+    run_id = state.get("run_id")
+    if not run_id:
+        return {"is_fatal_error": True, "error_message": "run_id is required"}
 
-    tool = _TavilySearchResults(max_results=1)
-    results: list[dict] = []
+    tool = TavilySearch(max_results=5)
+    candidates: list[dict] = []
 
     for category, query in CATEGORIES:
-        raw = _fetch_top(tool, query)
-        if raw is None:
-            continue
         try:
-            entry = CategoryResult(category=category, **raw)
-            results.append(entry.model_dump())
-        except ValidationError:
+            response = tool.invoke({"query": query})
+            articles = response.get("results", []) if isinstance(response, dict) else []
+            for r in articles:
+                candidates.append({
+                    "title": r.get("title", ""),
+                    "url": r.get("url", ""),
+                    "virality_score": _virality_score(r, category),
+                    "category": category,
+                })
+        except Exception:
             continue
 
-    return {"results": results}
+    if not candidates:
+        return {"is_fatal_error": True, "error_message": "No articles found"}
+
+    best = max(candidates, key=lambda c: c["virality_score"])
+
+    try:
+        with Session(get_engine()) as session:
+            run = session.get(Run, run_id)
+            if not run:
+                return {"is_fatal_error": True, "error_message": f"Run {run_id} not found"}
+            run.source_article_url = best["url"]
+            run.source_article_title = best["title"]
+            session.commit()
+    except Exception as exc:
+        return {"is_fatal_error": True, "error_message": f"DB error: {exc}"}
+
+    return {
+        "source_article_url": best["url"],
+        "source_article_title": best["title"],
+    }

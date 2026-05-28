@@ -31,6 +31,8 @@ class PersonaRunState(TypedDict):
 
 
 class ResearcherState(TypedDict, total=False):
-    results: list[dict]  # [{category, title, url}] — one entry per category
+    run_id: str
+    source_article_url: str
+    source_article_title: str
     is_fatal_error: bool
     error_message: str | None
