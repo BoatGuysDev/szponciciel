@@ -53,7 +53,12 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
                     "persona_id": persona_id,
                     "content_type": content_type,
                     "video_strategy": "stock",
-                }
+                },
+                config={
+                    "run_name": f"persona:{persona_id}",
+                    "metadata": {"run_id": run_id, "persona_id": persona_id},
+                    "tags": [content_type],
+                },
             )
         except Exception as e:
             result = {"is_fatal_error": True, "error_message": f"Pipeline crashed: {e}"}

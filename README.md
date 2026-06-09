@@ -57,12 +57,16 @@ Copy `.env.example` to `.env` and fill in the values. The variables:
 |---|---|---|---|
 | `DATABASE_URL` | Full SQLAlchemy URL. Required (no implicit default). Test runs are pinned to `sqlite:///:memory:` by `src/tests/conftest.py` regardless of this value | Yes | — |
 | `RUN_MODE` | Application mode flag for non-DB behaviours. Valid values: `development`, `test`, `production` | No | `development` |
+| `LOG_LEVEL` | Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR`. Rendered as JSON when `RUN_MODE=production`, colored console otherwise | No | `INFO` |
 | `COMPUTE_DEVICE` | Coqui TTS + WhisperX device: `cpu`, `cuda`, or `mps` | No | `cpu` |
 | `WHISPER_MODEL` | WhisperX model size for `align_node`: `tiny`, `base`, `small`, `medium`, `large-v3` | No | `base` |
 | `TTS_MODEL` | Coqui TTS model name used by `tts_node` | No | `tts_models/multilingual/multi-dataset/xtts_v2` |
 | `MODEL` | Gemini model used by LLM nodes | No | `gemini-2.5-flash-lite` |
 | `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID used for Vertex AI | Yes (when `GOOGLE_GENAI_USE_VERTEXAI=true`) | — |
 | `GOOGLE_GENAI_USE_VERTEXAI` | Route Gemini calls through Vertex AI (`true`) or the public GenAI API (`false`) | Yes | `true` |
+| `LANGSMITH_TRACING` | Enable LangSmith tracing of every run (`true`/`false`) | No | `false` |
+| `LANGSMITH_API_KEY` | LangSmith API key (from https://smith.langchain.com) | When tracing | — |
+| `LANGSMITH_PROJECT` | LangSmith project to log traces under | No | `default` |
 | `ZERNIO_API_KEY` | API key for publishing videos via Zernio | Yes | — |
 | `TAVILY_API_KEY` | API key for article content fetching via Tavily | Yes | — |
 | `GROUND_TRUTH_MEDIA_ACCOUNT_ID` | TikTok account ID assigned to the ground-truth persona during DB seeding | Yes (for seeding) | — |
@@ -97,6 +101,18 @@ This serves the graph at `http://127.0.0.1:2024` and prints a Studio URL:
 `https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024`. Open it, submit `{ "prompt": "..." }`, and watch the run live.
 
 > **"Failed to fetch" / "Failed to initialize Studio" while the server is running?** The browser is blocking an HTTPS Studio page from calling `http://localhost`. Use Chrome (it allows localhost), or run `uv run langgraph dev --tunnel` to expose an HTTPS endpoint Studio can reach.
+
+### Tracing (LangSmith)
+
+For full LLM tracing, token/cost tracking, and replay of failed runs, set in `.env`:
+
+```bash
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=<key from https://smith.langchain.com>
+LANGSMITH_PROJECT=szponciciel
+```
+
+Every run is then traced in LangSmith with no code changes. Each persona's pipeline is logged as a `persona:<id>` run tagged with `run_id` and `persona_id`, so you can filter and replay individual failures. Left off (the default), tracing adds no overhead.
 
 ## Agent Workflow
 
