@@ -71,6 +71,33 @@ Copy `.env.example` to `.env` and fill in the values. The variables:
 | `SCRIPT_RELIABILITY_THRESHOLD` | Mean reliability score threshold to exit the writer↔critic loop early | No | `0.8` |
 | `MAX_SCRIPT_LENGTH` | Maximum character length for generated TikTok scripts | No | `8000` |
 
+## Running the pipeline
+
+The whole pipeline is a single LangGraph orchestrator — **intake → research → run_personas → finalize**. One run picks a news story, then generates and uploads one video per active persona. Complete [Setup](#setup) first (credentials, migrations, seed, background videos), since a real run calls Gemini, Tavily, Coqui TTS, and Zernio.
+
+### CLI (direct / cron)
+
+```bash
+# Targeted topic
+uv run python -m orchestrator "post videos about the USA-Iran conflict"
+
+# Generic — researcher sweeps the default news categories
+uv run python -m orchestrator "research and post a few videos"
+```
+
+The prompt argument is **required** (running with no argument prints usage). A cron job runs the same command with a generic prompt.
+
+### Web UI (LangGraph Studio)
+
+```bash
+uv run langgraph dev
+```
+
+This serves the graph at `http://127.0.0.1:2024` and prints a Studio URL:
+`https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024`. Open it, submit `{ "prompt": "..." }`, and watch the run live.
+
+> **"Failed to fetch" / "Failed to initialize Studio" while the server is running?** The browser is blocking an HTTPS Studio page from calling `http://localhost`. Use Chrome (it allows localhost), or run `uv run langgraph dev --tunnel` to expose an HTTPS endpoint Studio can reach.
+
 ## Agent Workflow
 
 ```
