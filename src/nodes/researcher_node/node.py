@@ -58,7 +58,7 @@ def researcher_node(state: PersonaRunState) -> ResearcherResult:
         if not session.get(Run, run_id):
             return {"is_fatal_error": True, "error_message": f"Run {run_id} not found"}
 
-    candidates = fetch_news_candidates.invoke({})
+    candidates = fetch_news_candidates.invoke({"topic": state.get("topic")})
     if not candidates:
         return {"is_fatal_error": True, "error_message": "No articles found"}
 

@@ -13,16 +13,18 @@ CATEGORIES: list[tuple[str, str]] = [
 
 
 @tool
-def fetch_news_candidates() -> list[dict]:
-    """Fetches recent news articles across categories via Tavily and deduplicates them by URL.
+def fetch_news_candidates(topic: str | None = None) -> list[dict]:
+    """Fetches recent news articles via Tavily and deduplicates them by URL.
 
-    Returns a list of candidate dicts with keys: title, url, content.
+    If a topic is given, searches for that topic; otherwise sweeps the default
+    news categories. Returns a list of candidate dicts with keys: title, url, content.
     """
     search = TavilySearch(max_results=5, topic="news", time_range="day")
+    queries = [topic] if topic else [query for _, query in CATEGORIES]
     candidates: list[dict] = []
     seen_urls: set[str] = set()
 
-    for _, query in CATEGORIES:
+    for query in queries:
         try:
             response = search.invoke({"query": query})
         except Exception:

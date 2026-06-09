@@ -198,3 +198,39 @@ class TestResearcherNode(BaseTestClass):
 
         assert result["is_fatal_error"] is True
         assert "Scoring error" in result["error_message"]
+
+    def test_topic_searches_single_query_not_categories(self):
+        captured: list[str] = []
+
+        tool = MagicMock()
+
+        def invoke(payload):
+            captured.append(payload["query"])
+            return {"results": [{"title": "T", "url": "https://t.com", "content": "c"}]}
+
+        tool.invoke.side_effect = invoke
+
+        with patch.object(tools_module, "TavilySearch", MagicMock(return_value=tool)):
+            result = tools_module.fetch_news_candidates.invoke(
+                {"topic": "USA-Iran conflict"}
+            )
+
+        assert captured == ["USA-Iran conflict"]
+        assert result == [{"title": "T", "url": "https://t.com", "content": "c"}]
+
+    def test_node_threads_topic_to_fetch(self, engine: Engine):
+        run_id = _seed_run(engine)
+        scored = [
+            {"title": "T", "url": "https://t.com", "content": "c", "virality_score": 0.9}
+        ]
+
+        with (
+            patch.object(researcher_module, "fetch_news_candidates") as mock_fetch,
+            _mock_scoring(scored),
+        ):
+            mock_fetch.invoke.return_value = [
+                {"title": "T", "url": "https://t.com", "content": "c"}
+            ]
+            researcher_node({"run_id": run_id, "topic": "USA-Iran conflict"})
+
+        mock_fetch.invoke.assert_called_once_with({"topic": "USA-Iran conflict"})
