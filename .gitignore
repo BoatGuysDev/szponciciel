@@ -19,3 +19,5 @@ runs/
 
 # macOS metadata
 .DS_Store
+
+.langgraph_api/
