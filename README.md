@@ -41,6 +41,9 @@ uv run alembic upgrade head
 
 # 6. Seed the database (first run only)
 uv run python -m db.seed
+
+# 7. Download background videos
+uv run python scripts/download_videos.py
 ```
 
 **Additional guides:**
