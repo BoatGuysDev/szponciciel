@@ -3,11 +3,10 @@ from sqlmodel import Session, select
 
 from db import get_engine
 from models import Persona
-
-from nodes.video_assembly_graph.compose_node.simple_node import compose_simple_node
+from nodes.state import PersonaRunState
 from nodes.video_assembly_graph.align_node.node import align_node
 from nodes.video_assembly_graph.compose_node.node import compose_node
-from nodes.state import PersonaRunState
+from nodes.video_assembly_graph.compose_node.simple_node import compose_simple_node
 
 
 def _router(state: PersonaRunState) -> str:
