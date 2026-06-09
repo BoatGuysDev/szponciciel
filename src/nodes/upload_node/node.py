@@ -101,4 +101,4 @@ def upload_node(state: PersonaRunState) -> UploadResult:
             "error_message": f"Failed to create post: {e}",
         }
 
-    return {"tiktok_post_id": response.post["_id"]}
+    return {"tiktok_post_id": response.post.field_id}
