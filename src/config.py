@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     )
 
     run_mode: Literal["development", "test", "production"] = "development"
+    log_level: str = "INFO"
 
     media_root: Path = PROJECT_ROOT / "media"
 

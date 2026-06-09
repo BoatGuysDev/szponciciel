@@ -1,5 +1,6 @@
 from langgraph.graph import END, START, StateGraph
 
+from logging_config import setup_logging
 from nodes.researcher_node.node import researcher_node
 from orchestrator.finalize_node import finalize_node
 from orchestrator.intake_node import intake_node
@@ -16,6 +17,7 @@ def _after_research(state: OrchestratorState) -> str:
 
 
 def build_orchestrator():
+    setup_logging()
     graph = StateGraph(OrchestratorState)
 
     graph.add_node("intake", intake_node)

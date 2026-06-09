@@ -1,4 +1,3 @@
-import logging
 from typing import TypedDict
 
 from sqlmodel import select, Session
@@ -9,13 +8,14 @@ from langchain.messages import HumanMessage
 
 from config import settings
 from db import get_engine
+from logging_config import get_logger
 from models import Persona
 from .response_format import CaptionAgentResponseFormat
 
 from .system_prompt import CAPTION_SYSTEM_PROMPT
 from ..state import PersonaRunState
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 CAPTION_MAX_CHARS = 2200
 WORD_BOUNDARY_WINDOW = 50
 
@@ -32,9 +32,7 @@ def _truncate_caption(caption: str) -> str:
         return caption
 
     log.warning(
-        "Caption exceeded %d chars (got %d); truncating.",
-        CAPTION_MAX_CHARS,
-        len(caption),
+        "caption.truncated", max_chars=CAPTION_MAX_CHARS, length=len(caption)
     )
 
     cut = caption[:CAPTION_MAX_CHARS]
@@ -92,7 +90,7 @@ def caption_node(state: PersonaRunState) -> CaptionResult:
 
     parsed_output = response.get("structured_response")
     if parsed_output is None:
-        log.warning("Caption agent returned no structured response.")
+        log.warning("caption.no_structured_response")
         result["is_fatal_error"] = True
         result["error_message"] = "Failed to parse agent response."
         return result

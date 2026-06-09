@@ -4,8 +4,11 @@ from sqlmodel import Session, select
 
 from config import settings
 from db import get_engine
+from logging_config import get_logger
 from models import Persona, Run
 from orchestrator.state import OrchestratorState
+
+log = get_logger(__name__)
 
 INTAKE_SYSTEM_PROMPT = """You extract the news topic a user wants short videos about.
 
@@ -48,6 +51,7 @@ def intake_node(state: OrchestratorState) -> OrchestratorState:
         try:
             topic = _extract_topic(prompt)
         except Exception as e:
+            log.error("intake.topic_extraction_failed", run_id=run_id, error=str(e))
             return {
                 "run_id": run_id,
                 "is_fatal_error": True,
@@ -59,6 +63,7 @@ def intake_node(state: OrchestratorState) -> OrchestratorState:
         persona_ids = [p.id for p in personas]
 
     if not persona_ids:
+        log.error("intake.no_active_personas", run_id=run_id)
         return {
             "run_id": run_id,
             "topic": topic,
@@ -66,4 +71,5 @@ def intake_node(state: OrchestratorState) -> OrchestratorState:
             "error_message": "No active personas to run.",
         }
 
+    log.info("intake.ready", run_id=run_id, topic=topic, personas=len(persona_ids))
     return {"run_id": run_id, "topic": topic, "persona_ids": persona_ids}

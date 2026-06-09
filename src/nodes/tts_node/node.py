@@ -1,4 +1,3 @@
-import logging
 import re
 
 from sqlmodel import Session, select
@@ -6,10 +5,11 @@ from TTS.api import TTS
 
 from config import settings
 from db import get_engine
+from logging_config import get_logger
 from models import Persona
 from nodes.state import PersonaRunState, persona_run_dir
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 _tts: TTS | None = None
 
 

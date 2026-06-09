@@ -1,12 +1,16 @@
 import random
 from datetime import datetime, timezone
 
+import structlog
 from sqlmodel import Session
 
 from db import get_engine
+from logging_config import get_logger
 from models import Persona, PersonaRun
 from nodes.persona_graph.graph import persona_graph
 from orchestrator.state import OrchestratorState, PersonaOutcome
+
+log = get_logger(__name__)
 
 
 def run_personas_node(state: OrchestratorState) -> OrchestratorState:
@@ -37,6 +41,11 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
             session.refresh(persona_run)
             persona_run_id = persona_run.id
 
+        structlog.contextvars.bind_contextvars(
+            run_id=run_id, persona_id=persona_id
+        )
+        log.info("persona.start", content_type=content_type)
+
         try:
             result = compiled.invoke(
                 {
@@ -50,6 +59,11 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
             result = {"is_fatal_error": True, "error_message": f"Pipeline crashed: {e}"}
 
         status = "failed" if result.get("is_fatal_error") else "completed"
+        if status == "failed":
+            log.error("persona.failed", error=result.get("error_message"))
+        else:
+            log.info("persona.completed", post_id=result.get("tiktok_post_id"))
+        structlog.contextvars.clear_contextvars()
 
         with Session(get_engine()) as session:
             persona_run = session.get(PersonaRun, persona_run_id)
