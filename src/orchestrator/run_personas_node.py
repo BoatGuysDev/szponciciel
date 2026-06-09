@@ -27,7 +27,16 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
     for persona_id in persona_ids:
         with Session(get_engine()) as session:
             persona = session.get(Persona, persona_id)
-            ratio = persona.real_news_ratio if persona else 0.5
+            if not persona:
+                outcomes.append(
+                    {
+                        "persona_id": persona_id,
+                        "status": "failed",
+                        "error_message": "Persona not found.",
+                    }
+                )
+                continue
+            ratio = persona.real_news_ratio
             content_type = "real" if random.random() < ratio else "fake"
             persona_run = PersonaRun(
                 run_id=run_id,

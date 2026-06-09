@@ -31,6 +31,7 @@ class PersonaRunState(TypedDict):
     run_id: str
     persona_id: str
     content_type: Literal["real", "fake"]
+    topic: str | None
     video_strategy: Literal["stock", "ai"]
     base_script: str
     narration: str

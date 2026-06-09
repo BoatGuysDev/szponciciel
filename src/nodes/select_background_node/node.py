@@ -17,6 +17,12 @@ class SelectBackgroundResult(TypedDict, total=False):
 def select_background_node(state: PersonaRunState) -> SelectBackgroundResult:
     """Picks a random stock category and a clip from it for the background video."""
 
+    if not VALID_CATEGORIES:
+        return {
+            "is_fatal_error": True,
+            "error_message": "Background selection failed: no stock video categories configured.",
+        }
+
     category = random.choice(sorted(VALID_CATEGORIES))
     try:
         path = StockVideoProvider().get_video(VideoRequest(category=category))

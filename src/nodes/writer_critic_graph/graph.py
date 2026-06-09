@@ -106,13 +106,19 @@ def writer_critic_graph(state: PersonaRunState) -> WriterCriticResult:
             "is_fatal_error": True,
             "error_message": result["error_message"],
         }
+    draft_script = result.get("draft_script")
+    if not draft_script:
+        return {
+            "is_fatal_error": True,
+            "error_message": "Writer/critic finished without producing a draft script.",
+        }
 
     with Session(get_engine()) as session:
         session.exec(
             update(Run)
             .where(Run.id == state["run_id"])
-            .values(base_script=result["draft_script"])
+            .values(base_script=draft_script)
         )
         session.commit()
 
-    return {"base_script": result["draft_script"]}
+    return {"base_script": draft_script}

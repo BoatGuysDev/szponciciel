@@ -65,6 +65,7 @@ Copy `.env.example` to `.env` and fill in the values. The variables:
 | `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID used for Vertex AI | Yes (when `GOOGLE_GENAI_USE_VERTEXAI=true`) | — |
 | `GOOGLE_GENAI_USE_VERTEXAI` | Route Gemini calls through Vertex AI (`true`) or the public GenAI API (`false`) | Yes | `true` |
 | `LANGSMITH_TRACING` | Enable LangSmith tracing of every run (`true`/`false`) | No | `false` |
+| `LANGSMITH_ENDPOINT` | LangSmith API endpoint URL | No | `https://api.smith.langchain.com` |
 | `LANGSMITH_API_KEY` | LangSmith API key (from https://smith.langchain.com) | When tracing | — |
 | `LANGSMITH_PROJECT` | LangSmith project to log traces under | No | `default` |
 | `ZERNIO_API_KEY` | API key for publishing videos via Zernio | Yes | — |

@@ -96,3 +96,28 @@ class TestRunPersonasNode(BaseTestClass):
 
         assert result["outcomes"][0]["status"] == "failed"
         assert "kaboom" in result["outcomes"][0]["error_message"]
+
+    def test_missing_persona_is_marked_failed_and_skipped(
+        self, graph: StateGraph, engine: Engine
+    ):
+        run_id = _seed(engine)
+        mock_compiled = MagicMock()
+        mock_compiled.invoke.return_value = {"tiktok_post_id": "ok"}
+
+        with patch(
+            "orchestrator.run_personas_node.persona_graph", return_value=mock_compiled
+        ):
+            result = graph.compile().invoke(
+                {"run_id": run_id, "persona_ids": ["p1", "missing-persona"]}
+            )
+
+        outcomes = {o["persona_id"]: o for o in result["outcomes"]}
+        assert outcomes["missing-persona"]["status"] == "failed"
+        assert outcomes["missing-persona"]["error_message"] == "Persona not found."
+        assert mock_compiled.invoke.call_count == 1
+
+        with Session(engine) as session:
+            missing_rows = session.exec(
+                select(PersonaRun).where(PersonaRun.persona_id == "missing-persona")
+            ).all()
+            assert missing_rows == []

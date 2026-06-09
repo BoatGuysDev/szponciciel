@@ -57,7 +57,13 @@ def narrator_node(state: PersonaRunState) -> NarratorResult:
         The narration must be in {persona.language} and match the following style and tone: {persona.style}, {persona.tone}.
     """
 
-    response = agent.invoke({"messages": [HumanMessage(content=prompt)]})
+    try:
+        response = agent.invoke({"messages": [HumanMessage(content=prompt)]})
+    except Exception as e:
+        return {
+            "is_fatal_error": True,
+            "error_message": f"Narration generation failed: {e}",
+        }
 
     return {
         "narration": response["messages"][-1].content,

@@ -234,3 +234,20 @@ class TestResearcherNode(BaseTestClass):
             researcher_node({"run_id": run_id, "topic": "USA-Iran conflict"})
 
         mock_fetch.invoke.assert_called_once_with({"topic": "USA-Iran conflict"})
+
+    def test_graph_threads_topic_to_fetch(self, graph: StateGraph, engine: Engine):
+        run_id = _seed_run(engine)
+        scored = [
+            {"title": "T", "url": "https://t.com", "content": "c", "virality_score": 0.9}
+        ]
+
+        with (
+            patch.object(researcher_module, "fetch_news_candidates") as mock_fetch,
+            _mock_scoring(scored),
+        ):
+            mock_fetch.invoke.return_value = [
+                {"title": "T", "url": "https://t.com", "content": "c"}
+            ]
+            graph.compile().invoke({"run_id": run_id, "topic": "USA-Iran conflict"})
+
+        mock_fetch.invoke.assert_called_once_with({"topic": "USA-Iran conflict"})
