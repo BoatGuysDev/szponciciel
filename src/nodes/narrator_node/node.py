@@ -39,7 +39,8 @@ def narrator_node(state: PersonaRunState) -> NarratorResult:
                 "error_message": f"Persona with id {state['persona_id']} not found.",
             }
 
-    if not all([run.base_script, persona.language, persona.style, persona.tone]):
+    base_script = state.get("base_script") or run.base_script
+    if not all([base_script, persona.language, persona.style, persona.tone]):
         return {
             "is_fatal_error": True,
             "error_message": "Missing required information to create narration.",
@@ -51,7 +52,7 @@ def narrator_node(state: PersonaRunState) -> NarratorResult:
     )
 
     prompt = f"""
-        Create a narration for the following script: {run.base_script}
+        Create a narration for the following script: {base_script}
 
         The narration must be in {persona.language} and match the following style and tone: {persona.style}, {persona.tone}.
     """

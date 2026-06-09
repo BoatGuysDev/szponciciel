@@ -13,6 +13,7 @@ from nodes.writer_critic_graph.critic_node.node import critic_node
 
 
 class WriterCriticResult(TypedDict, total=False):
+    base_script: str
     is_fatal_error: bool
     error_message: str | None
 
@@ -114,4 +115,4 @@ def writer_critic_graph(state: PersonaRunState) -> WriterCriticResult:
         )
         session.commit()
 
-    return {}
+    return {"base_script": result["draft_script"]}
