@@ -1,9 +1,24 @@
 from pathlib import Path
 from typing import Literal, TypedDict
 
+from langgraph.graph import END
+
 
 def persona_run_dir(state: "PersonaRunState") -> Path:
     return Path("runs") / state["run_id"] / state["persona_id"]
+
+
+def end_if_fatal(next_node: str):
+    """Conditional-edge router: stop at END on a fatal error, else go to next_node.
+
+    Keeps a failed node's error_message intact instead of letting a downstream
+    node crash on the missing state it expected.
+    """
+
+    def router(state: "PersonaRunState") -> str:
+        return END if state.get("is_fatal_error") else next_node
+
+    return router
 
 
 class WordTiming(TypedDict):
