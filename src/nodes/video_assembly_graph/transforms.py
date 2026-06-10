@@ -130,7 +130,7 @@ _SYSTEM_FONT_FALLBACKS = [
 def _load_font(font_path: str | None) -> ImageFont.FreeTypeFont:
     if font_path and Path(font_path).is_file():
         return ImageFont.truetype(font_path, FONT_SIZE)
-    bundled = Path(__file__).resolve().parent / "assets/fonts/Anton-Regular.ttf"
+    bundled = Path.cwd() / "src/assets/fonts/Anton-Regular.ttf"
     if bundled.is_file():
         return ImageFont.truetype(str(bundled), FONT_SIZE)
     for p in _SYSTEM_FONT_FALLBACKS:

@@ -21,6 +21,7 @@ Build a fully automated, self-improving TikTok content factory that:
 
 **Prerequisites:**
 - Python 3.13+, [uv](https://docs.astral.sh/uv/)
+- FFmpeg, [installation guide](https://ffmpeg.org/download.html)
 - Google Cloud CLI, [gcloud](https://docs.cloud.google.com/sdk/docs/install-sdk)
 
 ```bash
