@@ -2,7 +2,6 @@ from typing import TypedDict
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
-from langchain.messages import HumanMessage
 
 from config import settings
 from nodes.writer_critic_graph.state import Review, WriterCriticState
@@ -10,6 +9,7 @@ from nodes.writer_critic_graph.critic_node.response_format import (
     CriticAgentResponseFormat,
 )
 from nodes.writer_critic_graph.critic_node.system_prompt import CRITIC_SYSTEM_PROMPT
+from nodes.utils import AgentResponseError, invoke_agent_response
 
 
 class CriticResult(TypedDict, total=False):
@@ -39,8 +39,8 @@ Script:
 {state["draft_script"]}"""
 
     try:
-        response = agent.invoke({"messages": [HumanMessage(content=prompt)]})
-    except Exception as e:
+        response = invoke_agent_response(agent, prompt)
+    except AgentResponseError as e:
         return {
             "is_fatal_error": True,
             "error_message": f"Critic agent failed: {e}",

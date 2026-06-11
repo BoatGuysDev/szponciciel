@@ -3,7 +3,6 @@ from sqlmodel import select, Session
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
-from langchain.messages import HumanMessage
 
 from config import settings
 from db import get_engine
@@ -11,6 +10,7 @@ from models import Run, Persona
 
 from nodes.narrator_node.system_prompt import NARRATOR_SYSTEM_PROMPT
 from nodes.state import PersonaRunState
+from nodes.utils import AgentResponseError, invoke_agent
 
 
 class NarratorResult(TypedDict, total=False):
@@ -58,13 +58,13 @@ def narrator_node(state: PersonaRunState) -> NarratorResult:
     """
 
     try:
-        response = agent.invoke({"messages": [HumanMessage(content=prompt)]})
-    except Exception as e:
+        narration = invoke_agent(agent, prompt)
+    except AgentResponseError as e:
         return {
             "is_fatal_error": True,
             "error_message": f"Narration generation failed: {e}",
         }
 
     return {
-        "narration": response["messages"][-1].content,
+        "narration": narration,
     }
