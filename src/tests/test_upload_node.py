@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 from langgraph.graph import StateGraph, START, END
 from sqlmodel import Session
 from requests import RequestException
+from late.models import PostCreateResponse
 
 from db import get_engine
 from models import Persona
@@ -28,7 +29,9 @@ class TestUploadNode(BaseTestClass):
                 "uploadUrl": "https://s3.example.com/upload",
                 "publicUrl": "https://cdn.example.com/video.mp4",
             }
-            mock_client.posts.create.return_value.post = {"_id": "post-123"}
+            mock_client.posts.create.return_value = PostCreateResponse.model_validate(
+                {"message": "ok", "post": {"_id": "post-123"}}
+            )
             self.mock_client = mock_client
             yield mock_client
 
