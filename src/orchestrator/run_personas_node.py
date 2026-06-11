@@ -50,9 +50,7 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
             session.refresh(persona_run)
             persona_run_id = persona_run.id
 
-        structlog.contextvars.bind_contextvars(
-            run_id=run_id, persona_id=persona_id
-        )
+        structlog.contextvars.bind_contextvars(run_id=run_id, persona_id=persona_id)
         log.info("persona.start", content_type=content_type)
 
         try:

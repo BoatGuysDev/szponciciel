@@ -31,9 +31,7 @@ def _truncate_caption(caption: str) -> str:
     if len(caption) <= CAPTION_MAX_CHARS:
         return caption
 
-    log.warning(
-        "caption.truncated", max_chars=CAPTION_MAX_CHARS, length=len(caption)
-    )
+    log.warning("caption.truncated", max_chars=CAPTION_MAX_CHARS, length=len(caption))
 
     cut = caption[:CAPTION_MAX_CHARS]
     last_space = cut.rfind(" ")

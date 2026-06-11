@@ -22,7 +22,9 @@ def generate_tiktok_graph():
         "narrator_node", end_if_fatal("tts_node"), ["tts_node", END]
     )
     graph.add_conditional_edges(
-        "tts_node", end_if_fatal("select_background_node"), ["select_background_node", END]
+        "tts_node",
+        end_if_fatal("select_background_node"),
+        ["select_background_node", END],
     )
     graph.add_conditional_edges(
         "select_background_node",

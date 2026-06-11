@@ -44,7 +44,9 @@ class TestIntakeNode(BaseTestClass):
         with patch(
             "orchestrator.intake_node._extract_topic", return_value="USA-Iran conflict"
         ):
-            result = graph.compile().invoke({"prompt": "post videos about the conflict"})
+            result = graph.compile().invoke(
+                {"prompt": "post videos about the conflict"}
+            )
 
         assert "is_fatal_error" not in result
         assert result["topic"] == "USA-Iran conflict"

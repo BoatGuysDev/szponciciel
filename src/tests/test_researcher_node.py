@@ -221,7 +221,12 @@ class TestResearcherNode(BaseTestClass):
     def test_node_threads_topic_to_fetch(self, engine: Engine):
         run_id = _seed_run(engine)
         scored = [
-            {"title": "T", "url": "https://t.com", "content": "c", "virality_score": 0.9}
+            {
+                "title": "T",
+                "url": "https://t.com",
+                "content": "c",
+                "virality_score": 0.9,
+            }
         ]
 
         with (
