@@ -28,22 +28,25 @@ Build a fully automated, self-improving TikTok content factory that:
 # 1. Install dependencies
 uv sync
 
-# 2. Initialize Google Cloud CLI
+# 2. Install the pre-commit hook
+uvx pre-commit install
+
+# 3. Initialize Google Cloud CLI
 gcloud init
 
-# 3. Create local authentication credentials
+# 4. Create local authentication credentials
 gcloud auth application-default login
 
-# 4. Configure environment
+# 5. Configure environment
 cp .env.example .env
 
-# 5. Apply database migrations
+# 6. Apply database migrations
 uv run alembic upgrade head
 
-# 6. Seed the database (first run only)
+# 7. Seed the database (first run only)
 uv run python -m db.seed
 
-# 7. Download background videos
+# 8. Download background videos
 uv run python scripts/download_videos.py
 ```
 
