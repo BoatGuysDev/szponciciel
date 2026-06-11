@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
     run_mode: Literal["development", "test", "production"] = "development"
     log_level: str = "INFO"
+    log_file: Path = PROJECT_ROOT / "runs" / "logs" / "pipeline.jsonl"
 
     media_root: Path = PROJECT_ROOT / "media"
 
