@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from config import PROJECT_ROOT
 
 
 @dataclass(frozen=True)
@@ -120,6 +121,7 @@ VIDEO_WRITE_KWARGS: dict = {
 }
 
 
+BUNDLED_FONT_PATH = PROJECT_ROOT / "src" / "assets" / "fonts" / "Anton-Regular.ttf"
 _SYSTEM_FONT_FALLBACKS = [
     "/System/Library/Fonts/Supplemental/Impact.ttf",  # macOS
     "/usr/share/fonts/truetype/msttcorefonts/Impact.ttf",  # Linux
@@ -130,14 +132,13 @@ _SYSTEM_FONT_FALLBACKS = [
 def _load_font(font_path: str | None) -> ImageFont.FreeTypeFont:
     if font_path and Path(font_path).is_file():
         return ImageFont.truetype(font_path, FONT_SIZE)
-    bundled = Path.cwd() / "src/assets/fonts/Anton-Regular.ttf"
-    if bundled.is_file():
-        return ImageFont.truetype(str(bundled), FONT_SIZE)
+    if BUNDLED_FONT_PATH.is_file():
+        return ImageFont.truetype(str(BUNDLED_FONT_PATH), FONT_SIZE)
     for p in _SYSTEM_FONT_FALLBACKS:
         if Path(p).is_file():
             return ImageFont.truetype(p, FONT_SIZE)
     raise FileNotFoundError(
-        "No caption font found. Add Anton-Regular.ttf to src/assets/fonts/."
+        f"No caption font found. Add Anton-Regular.ttf to {BUNDLED_FONT_PATH}."
     )
 
 
