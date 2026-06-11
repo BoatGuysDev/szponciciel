@@ -108,9 +108,7 @@ class TestUploadNode(BaseTestClass):
     def test_presigned_url_failure(self, graph: StateGraph):
         from zernio import ZernioAPIError
 
-        self.mock_client.media.get_media_presigned_url.side_effect = ZernioAPIError(
-            "S3 error"
-        )
+        self.mock_client.media.get_media_presigned_url.side_effect = ZernioAPIError("S3 error")
 
         with Session(get_engine()) as session:
             session.add(self._make_persona())
@@ -165,9 +163,7 @@ class TestUploadNode(BaseTestClass):
     def test_create_post_failure(self, graph: StateGraph):
         from zernio import ZernioAPIError
 
-        self.mock_client.posts.create.side_effect = ZernioAPIError(
-            "post creation failed"
-        )
+        self.mock_client.posts.create.side_effect = ZernioAPIError("post creation failed")
 
         with Session(get_engine()) as session:
             session.add(self._make_persona())

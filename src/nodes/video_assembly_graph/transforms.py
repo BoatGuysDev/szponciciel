@@ -32,9 +32,7 @@ _whisper_asr: object | None = None
 _whisper_align: dict[str, tuple] = {}  # lang -> (align_model, metadata)
 
 
-def transcribe_and_align(
-    audio_path: Path, *, device: str, model_size: str
-) -> list[Word]:
+def transcribe_and_align(audio_path: Path, *, device: str, model_size: str) -> list[Word]:
     import whisperx
 
     global _whisper_asr
@@ -43,16 +41,12 @@ def transcribe_and_align(
     audio = whisperx.load_audio(str(audio_path))
 
     if _whisper_asr is None:
-        _whisper_asr = whisperx.load_model(
-            model_size, device, compute_type=compute_type
-        )
+        _whisper_asr = whisperx.load_model(model_size, device, compute_type=compute_type)
     result = _whisper_asr.transcribe(audio, batch_size=16)
 
     lang = result.get("language", "en")
     if lang not in _whisper_align:
-        _whisper_align[lang] = whisperx.load_align_model(
-            language_code=lang, device=device
-        )
+        _whisper_align[lang] = whisperx.load_align_model(language_code=lang, device=device)
     align_model, metadata = _whisper_align[lang]
     result = whisperx.align(result["segments"], align_model, metadata, audio, device)
 
@@ -60,9 +54,7 @@ def transcribe_and_align(
     for seg in result["segments"]:
         for w in seg.get("words", []):
             if "start" in w and "end" in w and w.get("word", "").strip():
-                words.append(
-                    Word(text=w["word"].strip(), start=w["start"], end=w["end"])
-                )
+                words.append(Word(text=w["word"].strip(), start=w["start"], end=w["end"]))
     return words
 
 
@@ -137,9 +129,7 @@ def _load_font(font_path: str | None) -> ImageFont.FreeTypeFont:
     for p in _SYSTEM_FONT_FALLBACKS:
         if Path(p).is_file():
             return ImageFont.truetype(p, FONT_SIZE)
-    raise FileNotFoundError(
-        f"No caption font found. Add Anton-Regular.ttf to {BUNDLED_FONT_PATH}."
-    )
+    raise FileNotFoundError(f"No caption font found. Add Anton-Regular.ttf to {BUNDLED_FONT_PATH}.")
 
 
 def render_text(text: str, font: ImageFont.FreeTypeFont) -> tuple[np.ndarray, int, int]:
@@ -284,9 +274,7 @@ def compose(
         bg = VideoFileClip(str(video_path)).without_audio()
         bg = fit_vertical(bg)
         bg = loop_to_duration(bg, audio.duration)
-        final = CompositeVideoClip(
-            [bg, *_build_caption_clips(chunks, font)], size=(TARGET_W, TARGET_H)
-        )
+        final = CompositeVideoClip([bg, *_build_caption_clips(chunks, font)], size=(TARGET_W, TARGET_H))
         final = final.with_duration(audio.duration).with_audio(audio)
         final.write_videofile(str(out_path), **VIDEO_WRITE_KWARGS)
     finally:

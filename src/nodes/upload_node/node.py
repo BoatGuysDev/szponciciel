@@ -24,9 +24,7 @@ _client: Zernio | None = None
 
 def upload_node(state: PersonaRunState) -> UploadResult:
     with Session(get_engine()) as session:
-        persona = session.exec(
-            select(Persona).where(Persona.id == state["persona_id"])
-        ).first()
+        persona = session.exec(select(Persona).where(Persona.id == state["persona_id"])).first()
 
         if not persona:
             return {
@@ -41,9 +39,7 @@ def upload_node(state: PersonaRunState) -> UploadResult:
         _client = Zernio(api_key=settings.zernio_api_key)
 
     try:
-        presigned_result = _client.media.get_media_presigned_url(
-            filename=filename, content_type="video/mp4"
-        )
+        presigned_result = _client.media.get_media_presigned_url(filename=filename, content_type="video/mp4")
     except ZernioAPIError as e:
         return {
             "is_fatal_error": True,
@@ -72,9 +68,7 @@ def upload_node(state: PersonaRunState) -> UploadResult:
 
     try:
         with video_path.open("rb") as f:
-            upload_video_response = requests.put(
-                upload_url, data=f.read(), headers={"Content-Type": "video/mp4"}
-            )
+            upload_video_response = requests.put(upload_url, data=f.read(), headers={"Content-Type": "video/mp4"})
     except RequestException as e:
         return {
             "is_fatal_error": True,

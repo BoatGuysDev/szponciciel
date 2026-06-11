@@ -39,9 +39,7 @@ class TestRunPersonasNode(BaseTestClass):
         graph.add_edge("run_personas_node", END)
         return graph
 
-    def test_runs_each_persona_and_records_outcomes(
-        self, graph: StateGraph, engine: Engine
-    ):
+    def test_runs_each_persona_and_records_outcomes(self, graph: StateGraph, engine: Engine):
         run_id = _seed(engine)
 
         mock_compiled = MagicMock()
@@ -55,12 +53,8 @@ class TestRunPersonasNode(BaseTestClass):
             {"is_fatal_error": True, "error_message": "boom"},
         ]
 
-        with patch(
-            "orchestrator.run_personas_node.persona_graph", return_value=mock_compiled
-        ):
-            result = graph.compile().invoke(
-                {"run_id": run_id, "persona_ids": ["p1", "p2"]}
-            )
+        with patch("orchestrator.run_personas_node.persona_graph", return_value=mock_compiled):
+            result = graph.compile().invoke({"run_id": run_id, "persona_ids": ["p1", "p2"]})
 
         outcomes = {o["persona_id"]: o for o in result["outcomes"]}
         assert outcomes["p1"]["status"] == "completed"
@@ -72,44 +66,32 @@ class TestRunPersonasNode(BaseTestClass):
         assert mock_compiled.invoke.call_count == 2
 
         with Session(engine) as session:
-            rows = session.exec(
-                select(PersonaRun).where(PersonaRun.run_id == run_id)
-            ).all()
+            rows = session.exec(select(PersonaRun).where(PersonaRun.run_id == run_id)).all()
             by_persona = {r.persona_id: r for r in rows}
             assert by_persona["p1"].status == "completed"
             assert by_persona["p1"].tiktok_post_id == "post-123"
             assert by_persona["p2"].status == "failed"
             assert by_persona["p2"].error_message == "boom"
 
-    def test_pipeline_crash_is_caught_and_marked_failed(
-        self, graph: StateGraph, engine: Engine
-    ):
+    def test_pipeline_crash_is_caught_and_marked_failed(self, graph: StateGraph, engine: Engine):
         run_id = _seed(engine)
 
         mock_compiled = MagicMock()
         mock_compiled.invoke.side_effect = RuntimeError("kaboom")
 
-        with patch(
-            "orchestrator.run_personas_node.persona_graph", return_value=mock_compiled
-        ):
+        with patch("orchestrator.run_personas_node.persona_graph", return_value=mock_compiled):
             result = graph.compile().invoke({"run_id": run_id, "persona_ids": ["p1"]})
 
         assert result["outcomes"][0]["status"] == "failed"
         assert "kaboom" in result["outcomes"][0]["error_message"]
 
-    def test_missing_persona_is_marked_failed_and_skipped(
-        self, graph: StateGraph, engine: Engine
-    ):
+    def test_missing_persona_is_marked_failed_and_skipped(self, graph: StateGraph, engine: Engine):
         run_id = _seed(engine)
         mock_compiled = MagicMock()
         mock_compiled.invoke.return_value = {"tiktok_post_id": "ok"}
 
-        with patch(
-            "orchestrator.run_personas_node.persona_graph", return_value=mock_compiled
-        ):
-            result = graph.compile().invoke(
-                {"run_id": run_id, "persona_ids": ["p1", "missing-persona"]}
-            )
+        with patch("orchestrator.run_personas_node.persona_graph", return_value=mock_compiled):
+            result = graph.compile().invoke({"run_id": run_id, "persona_ids": ["p1", "missing-persona"]})
 
         outcomes = {o["persona_id"]: o for o in result["outcomes"]}
         assert outcomes["missing-persona"]["status"] == "failed"
@@ -117,7 +99,5 @@ class TestRunPersonasNode(BaseTestClass):
         assert mock_compiled.invoke.call_count == 1
 
         with Session(engine) as session:
-            missing_rows = session.exec(
-                select(PersonaRun).where(PersonaRun.persona_id == "missing-persona")
-            ).all()
+            missing_rows = session.exec(select(PersonaRun).where(PersonaRun.persona_id == "missing-persona")).all()
             assert missing_rows == []

@@ -24,10 +24,7 @@ def _writer_router(state: WriterCriticState) -> str:
 
 def _reliability_score(review: Review) -> float:
     return (
-        review["coherence_score"]
-        + review["grammar_score"]
-        + review["unambiguity_score"]
-        + review["catchiness_score"]
+        review["coherence_score"] + review["grammar_score"] + review["unambiguity_score"] + review["catchiness_score"]
     ) / 4
 
 
@@ -64,9 +61,7 @@ def writer_critic_graph(state: PersonaRunState) -> WriterCriticResult:
                 "error_message": f"Run with id {state['run_id']} not found.",
             }
 
-        persona = session.exec(
-            select(Persona).where(Persona.id == state["persona_id"])
-        ).first()
+        persona = session.exec(select(Persona).where(Persona.id == state["persona_id"])).first()
         if not persona:
             return {
                 "is_fatal_error": True,
@@ -114,11 +109,7 @@ def writer_critic_graph(state: PersonaRunState) -> WriterCriticResult:
         }
 
     with Session(get_engine()) as session:
-        session.exec(
-            update(Run)
-            .where(Run.id == state["run_id"])
-            .values(base_script=draft_script)
-        )
+        session.exec(update(Run).where(Run.id == state["run_id"]).values(base_script=draft_script))
         session.commit()
 
     return {"base_script": draft_script}

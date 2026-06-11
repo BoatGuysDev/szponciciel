@@ -21,9 +21,7 @@ def _truncate_script(script: str) -> str:
         return script
 
     suffix = "..."
-    truncated_script = (
-        script[: settings.max_script_length - len(suffix)].rstrip() + suffix
-    )
+    truncated_script = script[: settings.max_script_length - len(suffix)].rstrip() + suffix
     return truncated_script
 
 
@@ -47,7 +45,9 @@ Tone: {state["persona_tone"]}
 Real news ratio: {state["real_news_ratio"]}"""
 
     if state["review"] and state["review"]["corrections"]:
-        prompt += f"\n\nIncorporate the following corrections from the previous draft:\n{state['review']['corrections']}"
+        prompt += (
+            f"\n\nIncorporate the following corrections from the previous draft:\n{state['review']['corrections']}"
+        )
         prompt += f"\n\nPrevious draft script:\n{state['draft_script']}"
 
     try:

@@ -33,6 +33,4 @@ def invoke_agent(agent: Any, prompt: str) -> str:
     try:
         return response["messages"][-1].content
     except (AttributeError, KeyError, IndexError, TypeError) as e:
-        raise AgentResponseError(
-            "Agent response did not include a final message content."
-        ) from e
+        raise AgentResponseError("Agent response did not include a final message content.") from e

@@ -27,9 +27,7 @@ def build_orchestrator():
 
     graph.add_edge(START, "intake")
     graph.add_conditional_edges("intake", _after_intake, ["research", "finalize"])
-    graph.add_conditional_edges(
-        "research", _after_research, ["run_personas", "finalize"]
-    )
+    graph.add_conditional_edges("research", _after_research, ["run_personas", "finalize"])
     graph.add_edge("run_personas", "finalize")
     graph.add_edge("finalize", END)
 

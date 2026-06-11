@@ -15,9 +15,7 @@ def _router(state: PersonaRunState) -> str:
         return "compose_simple_node"
     with Session(get_engine()) as session:
         persona = session.exec(select(Persona).where(Persona.id == pid)).first()
-    return (
-        "align_node" if (persona and persona.show_captions) else "compose_simple_node"
-    )
+    return "align_node" if (persona and persona.show_captions) else "compose_simple_node"
 
 
 def video_assembly_graph():

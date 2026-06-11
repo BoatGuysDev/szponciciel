@@ -52,14 +52,10 @@ def caption_node(state: PersonaRunState) -> CaptionResult:
     }
 
     with Session(get_engine()) as session:
-        persona = session.exec(
-            select(Persona).where(Persona.id == state["persona_id"])
-        ).first()
+        persona = session.exec(select(Persona).where(Persona.id == state["persona_id"])).first()
         if not persona:
             result["is_fatal_error"] = True
-            result["error_message"] = (
-                f"Persona with id {state['persona_id']} not found."
-            )
+            result["error_message"] = f"Persona with id {state['persona_id']} not found."
             return result
 
     if not all([state.get("narration"), persona.language, persona.style, persona.tone]):

@@ -39,8 +39,4 @@ def align_node(state: PersonaRunState) -> AlignResult:
             "error_message": f"WhisperX alignment failed: {e}",
         }
 
-    return {
-        "word_timings": [
-            {"text": w.text, "start": w.start, "end": w.end} for w in words
-        ]
-    }
+    return {"word_timings": [{"text": w.text, "start": w.start, "end": w.end} for w in words]}

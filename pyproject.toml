@@ -50,10 +50,7 @@ dev = [
 where = ["src"]
 
 [tool.ruff]
-exclude = [
-    "src/test_agent.ipynb",
-    "src/test_agent_fixed_schema.ipynb",
-]
+line-length = 120
 
 [tool.pytest.ini_options]
 testpaths = ["src/tests"]

@@ -27,9 +27,7 @@ def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
         }
 
     with Session(get_engine()) as session:
-        persona = session.exec(
-            select(Persona).where(Persona.id == state["persona_id"])
-        ).first()
+        persona = session.exec(select(Persona).where(Persona.id == state["persona_id"])).first()
 
         if not persona:
             return {

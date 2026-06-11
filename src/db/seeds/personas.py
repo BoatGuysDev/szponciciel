@@ -6,9 +6,7 @@ from db.seeds._utils import seed_records
 
 def load() -> int:
     if not settings.ground_truth_media_account_id:
-        raise RuntimeError(
-            "GROUND_TRUTH_MEDIA_ACCOUNT_ID is required to seed the ground_truth_media persona."
-        )
+        raise RuntimeError("GROUND_TRUTH_MEDIA_ACCOUNT_ID is required to seed the ground_truth_media persona.")
 
     personas = [
         Persona(

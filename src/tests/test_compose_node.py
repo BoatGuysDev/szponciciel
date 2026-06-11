@@ -50,9 +50,7 @@ class TestComposeNode(BaseTestClass):
         result = graph.compile().invoke(self._base_state())
 
         assert result.get("is_fatal_error") is None
-        assert result["output_video_path"] == str(
-            Path("runs/run-1/persona-1/output.mp4")
-        )
+        assert result["output_video_path"] == str(Path("runs/run-1/persona-1/output.mp4"))
         self.mock_compose.assert_called_once()
 
     def test_compose_error(self, graph: StateGraph):

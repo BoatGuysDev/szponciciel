@@ -29,21 +29,15 @@ class _ArticleRanking(BaseModel):
 
 
 def _score_with_llm(candidates: list[dict]) -> list[dict]:
-    summary = "\n".join(
-        f"[{i}] {c['title']} — {c['content'][:300]}" for i, c in enumerate(candidates)
-    )
+    summary = "\n".join(f"[{i}] {c['title']} — {c['content'][:300]}" for i, c in enumerate(candidates))
     llm = ChatGoogleGenerativeAI(model=settings.llm_model)
     structured = llm.with_structured_output(_ArticleRanking)
-    ranking: _ArticleRanking = structured.invoke(
-        f"{RESEARCHER_SYSTEM_PROMPT}\n\nCandidates:\n{summary}"
-    )
+    ranking: _ArticleRanking = structured.invoke(f"{RESEARCHER_SYSTEM_PROMPT}\n\nCandidates:\n{summary}")
 
     scored: list[dict] = []
     for entry in ranking.rankings:
         if 0 <= entry.index < len(candidates):
-            scored.append(
-                {**candidates[entry.index], "virality_score": entry.virality_score}
-            )
+            scored.append({**candidates[entry.index], "virality_score": entry.virality_score})
     return scored
 
 

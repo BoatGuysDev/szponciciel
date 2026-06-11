@@ -42,9 +42,7 @@ class TestResearcherNode(BaseTestClass):
         graph.add_edge("researcher_node", END)
         return graph
 
-    def test_picks_highest_virality_and_saves_to_db(
-        self, graph: StateGraph, engine: Engine
-    ):
+    def test_picks_highest_virality_and_saves_to_db(self, graph: StateGraph, engine: Engine):
         run_id = _seed_run(engine)
         articles = [
             {"title": "Low", "url": "https://example.com/low", "content": "..."},
@@ -75,9 +73,7 @@ class TestResearcherNode(BaseTestClass):
             assert run.source_article_title == "High"
             assert run.source_article_url == "https://example.com/high"
 
-    def test_deduplicates_by_url_across_categories(
-        self, graph: StateGraph, engine: Engine
-    ):
+    def test_deduplicates_by_url_across_categories(self, graph: StateGraph, engine: Engine):
         run_id = _seed_run(engine)
         duplicate = [{"title": "Dup", "url": "https://dup.com", "content": "x"}]
 
@@ -88,16 +84,12 @@ class TestResearcherNode(BaseTestClass):
                 captured.append(candidates)
                 return [{**candidates[0], "virality_score": 0.5}] if candidates else []
 
-            with patch.object(
-                researcher_module, "_score_with_llm", side_effect=capture
-            ):
+            with patch.object(researcher_module, "_score_with_llm", side_effect=capture):
                 graph.compile().invoke({"run_id": run_id})
 
         assert len(captured[0]) == 1
 
-    def test_missing_run_id_returns_fatal_error(
-        self, graph: StateGraph, engine: Engine
-    ):
+    def test_missing_run_id_returns_fatal_error(self, graph: StateGraph, engine: Engine):
         articles = [{"title": "X", "url": "https://x.com", "content": "..."}]
         scored = [
             {
@@ -140,9 +132,7 @@ class TestResearcherNode(BaseTestClass):
         assert result["is_fatal_error"] is True
         assert "No articles found" in result["error_message"]
 
-    def test_failed_category_does_not_stop_others(
-        self, graph: StateGraph, engine: Engine
-    ):
+    def test_failed_category_does_not_stop_others(self, graph: StateGraph, engine: Engine):
         run_id = _seed_run(engine)
         call_count = 0
 
@@ -151,9 +141,7 @@ class TestResearcherNode(BaseTestClass):
             call_count += 1
             if call_count == 1:
                 raise RuntimeError("fetch error")
-            return {
-                "results": [{"title": "OK", "url": "https://ok.com", "content": "..."}]
-            }
+            return {"results": [{"title": "OK", "url": "https://ok.com", "content": "..."}]}
 
         tool = MagicMock()
         tool.invoke.side_effect = side_effect
@@ -180,9 +168,7 @@ class TestResearcherNode(BaseTestClass):
             run = session.get(Run, run_id)
             assert run.source_article_url == "https://ok.com"
 
-    def test_scoring_failure_returns_fatal_error(
-        self, graph: StateGraph, engine: Engine
-    ):
+    def test_scoring_failure_returns_fatal_error(self, graph: StateGraph, engine: Engine):
         run_id = _seed_run(engine)
         articles = [{"title": "X", "url": "https://x.com", "content": "..."}]
 
@@ -211,9 +197,7 @@ class TestResearcherNode(BaseTestClass):
         tool.invoke.side_effect = invoke
 
         with patch.object(tools_module, "TavilySearch", MagicMock(return_value=tool)):
-            result = tools_module.fetch_news_candidates.invoke(
-                {"topic": "USA-Iran conflict"}
-            )
+            result = tools_module.fetch_news_candidates.invoke({"topic": "USA-Iran conflict"})
 
         assert captured == ["USA-Iran conflict"]
         assert result == [{"title": "T", "url": "https://t.com", "content": "c"}]
@@ -233,9 +217,7 @@ class TestResearcherNode(BaseTestClass):
             patch.object(researcher_module, "fetch_news_candidates") as mock_fetch,
             _mock_scoring(scored),
         ):
-            mock_fetch.invoke.return_value = [
-                {"title": "T", "url": "https://t.com", "content": "c"}
-            ]
+            mock_fetch.invoke.return_value = [{"title": "T", "url": "https://t.com", "content": "c"}]
             researcher_node({"run_id": run_id, "topic": "USA-Iran conflict"})
 
         mock_fetch.invoke.assert_called_once_with({"topic": "USA-Iran conflict"})
@@ -255,9 +237,7 @@ class TestResearcherNode(BaseTestClass):
             patch.object(researcher_module, "fetch_news_candidates") as mock_fetch,
             _mock_scoring(scored),
         ):
-            mock_fetch.invoke.return_value = [
-                {"title": "T", "url": "https://t.com", "content": "c"}
-            ]
+            mock_fetch.invoke.return_value = [{"title": "T", "url": "https://t.com", "content": "c"}]
             graph.compile().invoke({"run_id": run_id, "topic": "USA-Iran conflict"})
 
         mock_fetch.invoke.assert_called_once_with({"topic": "USA-Iran conflict"})

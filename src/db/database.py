@@ -22,10 +22,7 @@ def database_url() -> str:
 
     url = os.getenv("DATABASE_URL")
     if not url:
-        raise RuntimeError(
-            "DATABASE_URL is not set. Copy .env.example to .env or export it "
-            "in your environment."
-        )
+        raise RuntimeError("DATABASE_URL is not set. Copy .env.example to .env or export it in your environment.")
     return url
 
 

@@ -30,9 +30,7 @@ def narrator_node(state: PersonaRunState) -> NarratorResult:
                 "error_message": f"Run with id {state['run_id']} not found.",
             }
 
-        persona = session.exec(
-            select(Persona).where(Persona.id == state["persona_id"])
-        ).first()
+        persona = session.exec(select(Persona).where(Persona.id == state["persona_id"])).first()
         if not persona:
             return {
                 "is_fatal_error": True,

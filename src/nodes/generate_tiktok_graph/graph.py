@@ -18,9 +18,7 @@ def generate_tiktok_graph():
     graph.add_node(caption_node)
 
     graph.add_edge(START, "narrator_node")
-    graph.add_conditional_edges(
-        "narrator_node", end_if_fatal("tts_node"), ["tts_node", END]
-    )
+    graph.add_conditional_edges("narrator_node", end_if_fatal("tts_node"), ["tts_node", END])
     graph.add_conditional_edges(
         "tts_node",
         end_if_fatal("select_background_node"),
@@ -31,9 +29,7 @@ def generate_tiktok_graph():
         end_if_fatal("video_assembly_subgraph"),
         ["video_assembly_subgraph", END],
     )
-    graph.add_conditional_edges(
-        "video_assembly_subgraph", end_if_fatal("caption_node"), ["caption_node", END]
-    )
+    graph.add_conditional_edges("video_assembly_subgraph", end_if_fatal("caption_node"), ["caption_node", END])
     graph.add_edge("caption_node", END)
 
     return graph.compile()

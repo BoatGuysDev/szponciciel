@@ -28,9 +28,7 @@ class _TopicExtraction(BaseModel):
 def _extract_topic(prompt: str) -> str | None:
     llm = ChatGoogleGenerativeAI(model=settings.llm_model)
     structured = llm.with_structured_output(_TopicExtraction)
-    result: _TopicExtraction = structured.invoke(
-        f"{INTAKE_SYSTEM_PROMPT}\n\nInstruction:\n{prompt}"
-    )
+    result: _TopicExtraction = structured.invoke(f"{INTAKE_SYSTEM_PROMPT}\n\nInstruction:\n{prompt}")
     topic = (result.topic or "").strip()
     return topic or None
 

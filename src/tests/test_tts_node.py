@@ -71,9 +71,7 @@ class TestTtsNode(BaseTestClass):
         assert result["error_message"] == "Narration text is empty."
 
     def test_successful_tts_with_speaker_wav(self, graph: StateGraph, engine: Engine):
-        self._seed_persona(
-            engine, voice_speaker_wav="path/to/voice.wav", voice_speaker=None
-        )
+        self._seed_persona(engine, voice_speaker_wav="path/to/voice.wav", voice_speaker=None)
 
         result = graph.compile().invoke(
             {
@@ -120,9 +118,7 @@ class TestTtsNode(BaseTestClass):
         assert result.get("error_message") is None
         assert result["audio_path"] == audio_path
 
-    def test_successful_tts_defaults_language_to_en(
-        self, graph: StateGraph, engine: Engine
-    ):
+    def test_successful_tts_defaults_language_to_en(self, graph: StateGraph, engine: Engine):
         self._seed_persona(engine, language=None, voice_speaker="en_speaker_0")
 
         result = graph.compile().invoke(

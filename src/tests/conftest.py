@@ -14,6 +14,4 @@ def pytest_configure(config):
     reset_engine()
     resolved = database_url()
     if resolved != "sqlite:///:memory:":
-        raise RuntimeError(
-            f"Tests must run against in-memory SQLite; resolved {resolved!r}"
-        )
+        raise RuntimeError(f"Tests must run against in-memory SQLite; resolved {resolved!r}")

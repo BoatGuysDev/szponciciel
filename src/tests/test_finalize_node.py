@@ -35,9 +35,7 @@ class TestFinalizeNode(BaseTestClass):
 
     def test_marks_completed(self, graph: StateGraph, engine: Engine):
         run_id = _seed_run(engine)
-        graph.compile().invoke(
-            {"run_id": run_id, "outcomes": [{"status": "completed"}]}
-        )
+        graph.compile().invoke({"run_id": run_id, "outcomes": [{"status": "completed"}]})
         assert self._status(engine, run_id) == "completed"
 
     def test_marks_failed_on_fatal_error(self, graph: StateGraph, engine: Engine):
@@ -45,9 +43,7 @@ class TestFinalizeNode(BaseTestClass):
         graph.compile().invoke({"run_id": run_id, "is_fatal_error": True})
         assert self._status(engine, run_id) == "failed"
 
-    def test_marks_failed_when_all_personas_failed(
-        self, graph: StateGraph, engine: Engine
-    ):
+    def test_marks_failed_when_all_personas_failed(self, graph: StateGraph, engine: Engine):
         run_id = _seed_run(engine)
         graph.compile().invoke(
             {

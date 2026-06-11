@@ -39,9 +39,7 @@ class TestCriticNode(BaseTestClass):
 
     def _mock_agent(self, parsed: CriticAgentResponseFormat | None) -> MagicMock:
         mock = MagicMock()
-        mock.invoke.return_value = (
-            {"structured_response": parsed} if parsed is not None else {}
-        )
+        mock.invoke.return_value = {"structured_response": parsed} if parsed is not None else {}
         return mock
 
     def test_successful_review(self, graph: StateGraph):

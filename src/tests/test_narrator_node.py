@@ -77,10 +77,7 @@ class TestNarratorNode(BaseTestClass):
             )
 
         assert result["is_fatal_error"]
-        assert (
-            result["error_message"]
-            == "Missing required information to create narration."
-        )
+        assert result["error_message"] == "Missing required information to create narration."
 
     def test_missing_narration_language(self, graph: StateGraph, engine: Engine):
         """Test that the narrator node returns a fatal error if the narration language is missing."""
@@ -107,10 +104,7 @@ class TestNarratorNode(BaseTestClass):
             )
 
         assert result["is_fatal_error"]
-        assert (
-            result["error_message"]
-            == "Missing required information to create narration."
-        )
+        assert result["error_message"] == "Missing required information to create narration."
 
     def test_missing_narration_style(self, graph: StateGraph, engine: Engine):
         """Test that the narrator node returns a fatal error if the narration style is missing."""
@@ -137,10 +131,7 @@ class TestNarratorNode(BaseTestClass):
             )
 
         assert result["is_fatal_error"]
-        assert (
-            result["error_message"]
-            == "Missing required information to create narration."
-        )
+        assert result["error_message"] == "Missing required information to create narration."
 
     def test_missing_narration_tone(self, graph: StateGraph, engine: Engine):
         """Test that the narrator node returns a fatal error if the narration tone is missing."""
@@ -167,10 +158,7 @@ class TestNarratorNode(BaseTestClass):
             )
 
         assert result["is_fatal_error"]
-        assert (
-            result["error_message"]
-            == "Missing required information to create narration."
-        )
+        assert result["error_message"] == "Missing required information to create narration."
 
     def test_successful_narration(self, graph: StateGraph, engine: Engine):
         """Test that the narrator node returns a narration when all required data is present."""
@@ -178,9 +166,7 @@ class TestNarratorNode(BaseTestClass):
         expected_narration = "This is the generated narration."
 
         mock_agent = MagicMock()
-        mock_agent.invoke.return_value = {
-            "messages": [MagicMock(content=expected_narration)]
-        }
+        mock_agent.invoke.return_value = {"messages": [MagicMock(content=expected_narration)]}
 
         with Session(engine) as session:
             run = Run(status="pending", base_script="This is a test script.")

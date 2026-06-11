@@ -22,9 +22,7 @@ def setup_logging() -> None:
     level = getattr(logging, settings.log_level.upper(), logging.INFO)
 
     renderer = (
-        structlog.processors.JSONRenderer()
-        if settings.run_mode == "production"
-        else structlog.dev.ConsoleRenderer()
+        structlog.processors.JSONRenderer() if settings.run_mode == "production" else structlog.dev.ConsoleRenderer()
     )
 
     structlog.configure(

@@ -35,18 +35,12 @@ class TestIntakeNode(BaseTestClass):
         graph.add_edge("intake_node", END)
         return graph
 
-    def test_creates_run_and_selects_active_personas(
-        self, graph: StateGraph, engine: Engine
-    ):
+    def test_creates_run_and_selects_active_personas(self, graph: StateGraph, engine: Engine):
         _seed_persona(engine, "active", is_active=True)
         _seed_persona(engine, "inactive", is_active=False)
 
-        with patch(
-            "orchestrator.intake_node._extract_topic", return_value="USA-Iran conflict"
-        ):
-            result = graph.compile().invoke(
-                {"prompt": "post videos about the conflict"}
-            )
+        with patch("orchestrator.intake_node._extract_topic", return_value="USA-Iran conflict"):
+            result = graph.compile().invoke({"prompt": "post videos about the conflict"})
 
         assert "is_fatal_error" not in result
         assert result["topic"] == "USA-Iran conflict"
@@ -57,9 +51,7 @@ class TestIntakeNode(BaseTestClass):
             assert run is not None
             assert run.status == "running"
 
-    def test_generic_prompt_yields_no_topic_and_skips_llm(
-        self, graph: StateGraph, engine: Engine
-    ):
+    def test_generic_prompt_yields_no_topic_and_skips_llm(self, graph: StateGraph, engine: Engine):
         _seed_persona(engine, "p1", is_active=True)
 
         with patch("orchestrator.intake_node._extract_topic") as mock_extract:
@@ -77,9 +69,7 @@ class TestIntakeNode(BaseTestClass):
         assert result["is_fatal_error"] is True
         assert "No active personas" in result["error_message"]
 
-    def test_topic_extraction_failure_returns_fatal(
-        self, graph: StateGraph, engine: Engine
-    ):
+    def test_topic_extraction_failure_returns_fatal(self, graph: StateGraph, engine: Engine):
         _seed_persona(engine, "p1", is_active=True)
 
         with patch(

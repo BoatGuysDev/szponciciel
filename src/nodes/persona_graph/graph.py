@@ -19,9 +19,7 @@ def persona_graph():
         end_if_fatal("generate_tiktok_subgraph"),
         ["generate_tiktok_subgraph", END],
     )
-    graph.add_conditional_edges(
-        "generate_tiktok_subgraph", end_if_fatal("upload_node"), ["upload_node", END]
-    )
+    graph.add_conditional_edges("generate_tiktok_subgraph", end_if_fatal("upload_node"), ["upload_node", END])
     graph.add_edge("upload_node", END)
 
     return graph.compile()

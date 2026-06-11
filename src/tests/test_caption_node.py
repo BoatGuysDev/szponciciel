@@ -37,9 +37,7 @@ class TestCaptionNode(BaseTestClass):
     def _mock_agent(self, caption: str, hashtags: list[str]) -> MagicMock:
         mock = MagicMock()
         mock.invoke.return_value = {
-            "structured_response": CaptionAgentResponseFormat(
-                caption=caption, hashtags=hashtags
-            )
+            "structured_response": CaptionAgentResponseFormat(caption=caption, hashtags=hashtags)
         }
         return mock
 
@@ -66,9 +64,7 @@ class TestCaptionNode(BaseTestClass):
             result = graph.compile().invoke({"persona_id": "1"})
 
         assert result["is_fatal_error"]
-        assert (
-            result["error_message"] == "Missing required information to create caption."
-        )
+        assert result["error_message"] == "Missing required information to create caption."
 
     def test_missing_language(self, graph: StateGraph, engine: Engine):
         """Fatal error when persona.language is None."""
@@ -77,14 +73,10 @@ class TestCaptionNode(BaseTestClass):
             session.add(self._make_persona(language=None))
             session.commit()
 
-            result = graph.compile().invoke(
-                {"persona_id": "1", "narration": "Some narration."}
-            )
+            result = graph.compile().invoke({"persona_id": "1", "narration": "Some narration."})
 
         assert result["is_fatal_error"]
-        assert (
-            result["error_message"] == "Missing required information to create caption."
-        )
+        assert result["error_message"] == "Missing required information to create caption."
 
     def test_missing_style(self, graph: StateGraph, engine: Engine):
         """Fatal error when persona.style is None."""
@@ -93,14 +85,10 @@ class TestCaptionNode(BaseTestClass):
             session.add(self._make_persona(style=None))
             session.commit()
 
-            result = graph.compile().invoke(
-                {"persona_id": "1", "narration": "Some narration."}
-            )
+            result = graph.compile().invoke({"persona_id": "1", "narration": "Some narration."})
 
         assert result["is_fatal_error"]
-        assert (
-            result["error_message"] == "Missing required information to create caption."
-        )
+        assert result["error_message"] == "Missing required information to create caption."
 
     def test_missing_tone(self, graph: StateGraph, engine: Engine):
         """Fatal error when persona.tone is None."""
@@ -109,14 +97,10 @@ class TestCaptionNode(BaseTestClass):
             session.add(self._make_persona(tone=None))
             session.commit()
 
-            result = graph.compile().invoke(
-                {"persona_id": "1", "narration": "Some narration."}
-            )
+            result = graph.compile().invoke({"persona_id": "1", "narration": "Some narration."})
 
         assert result["is_fatal_error"]
-        assert (
-            result["error_message"] == "Missing required information to create caption."
-        )
+        assert result["error_message"] == "Missing required information to create caption."
 
     def test_no_structured_response(self, graph: StateGraph, engine: Engine):
         """Fatal error when agent returns no structured_response."""
@@ -132,9 +116,7 @@ class TestCaptionNode(BaseTestClass):
                 patch("nodes.caption_node.node.ChatGoogleGenerativeAI"),
                 patch("nodes.caption_node.node.create_agent", return_value=mock_agent),
             ):
-                result = graph.compile().invoke(
-                    {"persona_id": "1", "narration": "Some narration text."}
-                )
+                result = graph.compile().invoke({"persona_id": "1", "narration": "Some narration text."})
 
         assert result["is_fatal_error"]
         assert result["error_message"] == "Failed to parse agent response."
@@ -154,9 +136,7 @@ class TestCaptionNode(BaseTestClass):
                 patch("nodes.caption_node.node.ChatGoogleGenerativeAI"),
                 patch("nodes.caption_node.node.create_agent", return_value=mock_agent),
             ):
-                result = graph.compile().invoke(
-                    {"persona_id": "1", "narration": "Some narration text."}
-                )
+                result = graph.compile().invoke({"persona_id": "1", "narration": "Some narration text."})
 
         assert result.get("is_fatal_error") is False
         assert result.get("error_message") is None
@@ -177,9 +157,7 @@ class TestCaptionNode(BaseTestClass):
                 patch("nodes.caption_node.node.ChatGoogleGenerativeAI"),
                 patch("nodes.caption_node.node.create_agent", return_value=mock_agent),
             ):
-                result = graph.compile().invoke(
-                    {"persona_id": "1", "narration": "Some narration text."}
-                )
+                result = graph.compile().invoke({"persona_id": "1", "narration": "Some narration text."})
 
         assert result.get("is_fatal_error") is False
         assert result.get("error_message") is None

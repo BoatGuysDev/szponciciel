@@ -65,9 +65,7 @@ class TestComposeSimpleNode(BaseTestClass):
         result = graph.compile().invoke(self._base_state())
 
         assert result.get("is_fatal_error") is None
-        assert result["output_video_path"] == str(
-            Path("runs/run-1/persona-1/output.mp4")
-        )
+        assert result["output_video_path"] == str(Path("runs/run-1/persona-1/output.mp4"))
         self.mock_audio_cls.assert_called_once_with("runs/run-1/persona-1/speech.wav")
         self.mock_video_cls.assert_called_once_with("media/satisfying/clip.mp4")
         self.mock_fit_vertical.assert_called_once()
