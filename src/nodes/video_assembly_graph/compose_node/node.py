@@ -1,9 +1,8 @@
 from pathlib import Path
 from typing import TypedDict
 
-from nodes.video_assembly_graph.transforms import Word, compose
-
 from nodes.state import PersonaRunState, persona_run_dir
+from nodes.video_assembly_graph.transforms import Word, compose
 
 
 class ComposeResult(TypedDict, total=False):

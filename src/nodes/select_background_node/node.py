@@ -1,10 +1,9 @@
 import random
 from typing import TypedDict
 
+from nodes.state import PersonaRunState
 from providers.stock_video_provider import VALID_CATEGORIES, StockVideoProvider
 from providers.video_provider import VideoRequest
-
-from ..state import PersonaRunState
 
 
 class SelectBackgroundResult(TypedDict, total=False):

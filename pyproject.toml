@@ -51,6 +51,16 @@ where = ["src"]
 
 [tool.ruff]
 line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+extend-select = ["B", "I", "TID"]
+
+[tool.ruff.format] 
+docstring-code-format = true 
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.pytest.ini_options]
 testpaths = ["src/tests"]

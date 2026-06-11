@@ -1,13 +1,13 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from langgraph.graph import StateGraph, START, END
-from sqlmodel import Session
+from langgraph.graph import END, START, StateGraph
 from sqlalchemy import Engine
+from sqlmodel import Session
 
-from nodes import caption_node, PersonaRunState
 from models import Persona
+from nodes import PersonaRunState, caption_node
 from nodes.caption_node.response_format import CaptionAgentResponseFormat
-
 from tests.base_test_class import BaseTestClass
 
 

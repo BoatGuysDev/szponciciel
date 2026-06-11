@@ -1,11 +1,11 @@
-import pytest
 from pathlib import Path
 from unittest.mock import patch
-from langgraph.graph import StateGraph, START, END
+
+import pytest
+from langgraph.graph import END, START, StateGraph
 
 from nodes import PersonaRunState
 from nodes.video_assembly_graph.compose_node.node import compose_node
-
 from tests.base_test_class import BaseTestClass
 
 _WORD_TIMINGS = [

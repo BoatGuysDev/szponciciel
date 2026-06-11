@@ -1,7 +1,7 @@
 import os
 from collections.abc import Generator
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 from sqlalchemy import Engine
 from sqlmodel import Session, SQLModel, create_engine
 

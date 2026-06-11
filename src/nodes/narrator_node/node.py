@@ -1,13 +1,12 @@
 from typing import TypedDict
-from sqlmodel import select, Session
 
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
+from langchain_google_genai import ChatGoogleGenerativeAI
+from sqlmodel import Session, select
 
 from config import settings
 from db import get_engine
-from models import Run, Persona
-
+from models import Persona, Run
 from nodes.narrator_node.system_prompt import NARRATOR_SYSTEM_PROMPT
 from nodes.state import PersonaRunState
 from nodes.utils import AgentResponseError, invoke_agent

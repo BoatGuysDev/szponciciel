@@ -1,11 +1,11 @@
-import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-from langgraph.graph import StateGraph, START, END
+
+import pytest
+from langgraph.graph import END, START, StateGraph
 
 from nodes import PersonaRunState
 from nodes.video_assembly_graph.compose_node.simple_node import compose_simple_node
-
 from tests.base_test_class import BaseTestClass
 
 

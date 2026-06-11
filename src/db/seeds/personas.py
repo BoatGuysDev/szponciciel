@@ -1,7 +1,6 @@
 from config import settings
-from models import Persona
-
 from db.seeds._utils import seed_records
+from models import Persona
 
 
 def load() -> int:

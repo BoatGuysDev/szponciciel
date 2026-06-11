@@ -2,8 +2,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from langgraph.graph import END, START, StateGraph
-from sqlmodel import Session
 from sqlalchemy import Engine
+from sqlmodel import Session
 
 from models import Run
 from nodes.researcher_node import node as researcher_module

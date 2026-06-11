@@ -1,18 +1,16 @@
 from typing import TypedDict
 
-from sqlmodel import select, Session
-
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
+from langchain_google_genai import ChatGoogleGenerativeAI
+from sqlmodel import Session, select
 
 from config import settings
 from db import get_engine
 from logging_config import get_logger
 from models import Persona
-from .response_format import CaptionAgentResponseFormat
-
-from .system_prompt import CAPTION_SYSTEM_PROMPT
-from ..state import PersonaRunState
+from nodes.caption_node.response_format import CaptionAgentResponseFormat
+from nodes.caption_node.system_prompt import CAPTION_SYSTEM_PROMPT
+from nodes.state import PersonaRunState
 from nodes.utils import AgentResponseError, invoke_agent_response
 
 log = get_logger(__name__)

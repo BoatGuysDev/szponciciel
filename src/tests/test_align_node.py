@@ -1,12 +1,12 @@
-import pytest
 from unittest.mock import patch
-from langgraph.graph import StateGraph, START, END
+
+import pytest
+from langgraph.graph import END, START, StateGraph
 
 from config import settings
-from nodes.video_assembly_graph.transforms import Word
 from nodes import PersonaRunState
 from nodes.video_assembly_graph.align_node.node import align_node
-
+from nodes.video_assembly_graph.transforms import Word
 from tests.base_test_class import BaseTestClass
 
 _MOCK_WORDS = [

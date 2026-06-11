@@ -1,13 +1,12 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import END, START, StateGraph
 
-from nodes.writer_critic_graph.writer_node.node import writer_node
-from nodes.writer_critic_graph.state import WriterCriticState
 from config import settings
-
+from nodes.writer_critic_graph.state import WriterCriticState
+from nodes.writer_critic_graph.writer_node.node import writer_node
 from tests.base_test_class import BaseTestClass
-
 
 BASE_STATE: WriterCriticState = {
     "article_url": "https://example.com/article",

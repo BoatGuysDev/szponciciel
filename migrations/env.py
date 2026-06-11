@@ -5,7 +5,6 @@ from alembic import context
 from sqlmodel import SQLModel
 
 import models  # noqa: F401
-
 from db.database import database_url, get_engine
 
 config = context.config

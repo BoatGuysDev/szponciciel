@@ -1,15 +1,15 @@
-import requests
-from requests import RequestException
-from pathlib import Path
 import time
+from pathlib import Path
 from typing import TypedDict
 
-from zernio import Zernio, ZernioAPIError
+import requests
+from requests import RequestException
 from sqlmodel import Session, select
+from zernio import Zernio, ZernioAPIError
 
+from config import settings
 from db import get_engine
 from models import Persona
-from config import settings
 from nodes.state import PersonaRunState
 
 

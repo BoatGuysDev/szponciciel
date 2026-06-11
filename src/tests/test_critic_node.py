@@ -1,15 +1,14 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import END, START, StateGraph
 
 from nodes.writer_critic_graph.critic_node.node import critic_node
 from nodes.writer_critic_graph.critic_node.response_format import (
     CriticAgentResponseFormat,
 )
 from nodes.writer_critic_graph.state import WriterCriticState
-
 from tests.base_test_class import BaseTestClass
-
 
 BASE_STATE: WriterCriticState = {
     "article_url": "https://example.com/article",

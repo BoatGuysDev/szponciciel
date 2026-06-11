@@ -2,9 +2,8 @@ from pathlib import Path
 from typing import TypedDict
 
 from config import settings
-from nodes.video_assembly_graph.transforms import transcribe_and_align
-
 from nodes.state import PersonaRunState, WordTiming
+from nodes.video_assembly_graph.transforms import transcribe_and_align
 
 
 class AlignResult(TypedDict, total=False):
