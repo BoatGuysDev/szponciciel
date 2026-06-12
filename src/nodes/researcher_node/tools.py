@@ -3,6 +3,11 @@ from __future__ import annotations
 from langchain_core.tools import tool
 from langchain_tavily import TavilySearch
 
+from logging_config import get_logger
+from utils.logging import log_exception
+
+log = get_logger(__name__)
+
 CATEGORIES: list[tuple[str, str]] = [
     ("AI", "latest artificial intelligence breakthroughs"),
     ("Tech", "latest technology and startup news"),
@@ -27,7 +32,8 @@ def fetch_news_candidates(topic: str | None = None) -> list[dict]:
     for query in queries:
         try:
             response = search.invoke({"query": query})
-        except Exception:
+        except Exception as exc:
+            log_exception(log, "researcher.news_fetch_failed", exc, query=query)
             continue
         articles = response.get("results", []) if isinstance(response, dict) else []
         for r in articles:

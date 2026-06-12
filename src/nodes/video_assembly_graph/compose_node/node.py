@@ -1,8 +1,12 @@
 from pathlib import Path
 from typing import TypedDict
 
+from logging_config import get_logger
 from nodes.state import PersonaRunState, persona_run_dir
 from nodes.video_assembly_graph.transforms import Word, compose
+from utils.logging import describe_exception, log_exception
+
+log = get_logger(__name__)
 
 
 class ComposeResult(TypedDict, total=False):
@@ -23,10 +27,17 @@ def compose_node(state: PersonaRunState) -> ComposeResult:
             words,
             out_path,
         )
-    except Exception as e:
+    except Exception as exc:
+        log_exception(
+            log,
+            "compose.failed",
+            exc,
+            background_video_path=state.get("background_video_path"),
+            audio_path=state.get("audio_path"),
+        )
         return {
             "is_fatal_error": True,
-            "error_message": f"Video composition failed: {e}",
+            "error_message": f"Video composition failed: {describe_exception(exc)}",
         }
 
     return {"output_video_path": str(out_path)}

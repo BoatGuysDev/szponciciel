@@ -4,12 +4,16 @@ from langchain.agents import create_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from config import settings
+from logging_config import get_logger
 from nodes.utils import AgentResponseError, invoke_agent_response
 from nodes.writer_critic_graph.critic_node.response_format import (
     CriticAgentResponseFormat,
 )
 from nodes.writer_critic_graph.critic_node.system_prompt import CRITIC_SYSTEM_PROMPT
 from nodes.writer_critic_graph.state import Review, WriterCriticState
+from utils.logging import describe_exception, log_exception
+
+log = get_logger(__name__)
 
 
 class CriticResult(TypedDict, total=False):
@@ -40,10 +44,11 @@ Script:
 
     try:
         response = invoke_agent_response(agent, prompt)
-    except AgentResponseError as e:
+    except AgentResponseError as exc:
+        log_exception(log, "critic.agent_failed", exc, iterations=state["iterations"])
         return {
             "is_fatal_error": True,
-            "error_message": f"Critic agent failed: {e}",
+            "error_message": f"Critic agent failed: {describe_exception(exc)}",
         }
 
     parsed: CriticAgentResponseFormat | None = response.get("structured_response")

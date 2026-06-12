@@ -8,6 +8,7 @@ from db import get_engine
 from logging_config import get_logger
 from models import Persona
 from nodes.state import PersonaRunState, persona_run_dir
+from utils.logging import describe_exception, log_exception
 
 log = get_logger(__name__)
 _tts: TTS | None = None
@@ -58,11 +59,11 @@ def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
                 progress_bar=True,
             ).to(settings.compute_device)
         _tts.tts_to_file(**kwargs)
-    except Exception as e:
-        log.exception("TTS generation failed")
+    except Exception as exc:
+        log_exception(log, "tts.generation_failed", exc, run_id=state["run_id"], persona_id=state["persona_id"])
         return {
             "is_fatal_error": True,
-            "error_message": f"Error during TTS generation: {str(e)}",
+            "error_message": f"Error during TTS generation: {describe_exception(exc)}",
         }
 
     return {

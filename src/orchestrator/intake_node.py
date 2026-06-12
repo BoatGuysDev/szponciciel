@@ -7,6 +7,7 @@ from db import get_engine
 from logging_config import get_logger
 from models import Persona, Run
 from orchestrator.state import OrchestratorState
+from utils.logging import describe_exception, log_exception
 
 log = get_logger(__name__)
 
@@ -48,12 +49,12 @@ def intake_node(state: OrchestratorState) -> OrchestratorState:
     if prompt:
         try:
             topic = _extract_topic(prompt)
-        except Exception as e:
-            log.error("intake.topic_extraction_failed", run_id=run_id, error=str(e))
+        except Exception as exc:
+            log_exception(log, "intake.topic_extraction_failed", exc, run_id=run_id, prompt=prompt)
             return {
                 "run_id": run_id,
                 "is_fatal_error": True,
-                "error_message": f"Topic extraction failed: {e}",
+                "error_message": f"Topic extraction failed: {describe_exception(exc)}",
             }
 
     with Session(get_engine()) as session:

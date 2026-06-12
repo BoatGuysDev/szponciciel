@@ -6,10 +6,14 @@ from sqlmodel import Session, select
 
 from config import settings
 from db import get_engine
+from logging_config import get_logger
 from models import Persona, Run
 from nodes.narrator_node.system_prompt import NARRATOR_SYSTEM_PROMPT
 from nodes.state import PersonaRunState
 from nodes.utils import AgentResponseError, invoke_agent
+from utils.logging import describe_exception, log_exception
+
+log = get_logger(__name__)
 
 
 class NarratorResult(TypedDict, total=False):
@@ -56,10 +60,11 @@ def narrator_node(state: PersonaRunState) -> NarratorResult:
 
     try:
         narration = invoke_agent(agent, prompt)
-    except AgentResponseError as e:
+    except AgentResponseError as exc:
+        log_exception(log, "narrator.agent_failed", exc, run_id=state["run_id"], persona_id=state["persona_id"])
         return {
             "is_fatal_error": True,
-            "error_message": f"Narration generation failed: {e}",
+            "error_message": f"Narration generation failed: {describe_exception(exc)}",
         }
 
     return {

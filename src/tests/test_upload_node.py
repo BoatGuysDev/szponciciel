@@ -173,3 +173,18 @@ class TestUploadNode(BaseTestClass):
 
         assert result["is_fatal_error"] is True
         assert "Failed to create post" in result["error_message"]
+
+    def test_unexpected_create_post_exception_is_logged(self, graph: StateGraph):
+        with Session(get_engine()) as session:
+            session.add(self._make_persona())
+            session.commit()
+
+        self.mock_client.posts.create.side_effect = KeyError("tiktok_account_id")
+
+        with patch("nodes.upload_node.node.log_exception") as mock_log_exception:
+            result = graph.compile().invoke(self._base_state())
+
+        assert result["is_fatal_error"] is True
+        assert "Failed to create post" in result["error_message"]
+        assert "KeyError" in result["error_message"]
+        mock_log_exception.assert_called_once()

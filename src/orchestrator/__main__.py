@@ -1,6 +1,9 @@
 import sys
 
+from logging_config import get_logger
 from orchestrator.graph import build_orchestrator
+
+log = get_logger(__name__)
 
 _USAGE = """usage: python -m orchestrator "<prompt>"
 
@@ -15,7 +18,12 @@ def main() -> int:
         return 2
 
     prompt = " ".join(args)
-    result = build_orchestrator().invoke({"prompt": prompt})
+    try:
+        result = build_orchestrator().invoke({"prompt": prompt})
+    except Exception as exc:
+        log.exception("orchestrator.run_failed", prompt=prompt)
+        print(f"Run crashed: {exc.__class__.__name__}: {exc}", file=sys.stderr)
+        return 1
 
     if result.get("is_fatal_error"):
         print(f"Run failed: {result.get('error_message')}", file=sys.stderr)

@@ -4,10 +4,14 @@ from langchain.agents import create_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from config import settings
+from logging_config import get_logger
 from nodes.utils import AgentResponseError, invoke_agent
 from nodes.writer_critic_graph.state import WriterCriticState
 from nodes.writer_critic_graph.writer_node.system_prompt import WRITER_SYSTEM_PROMPT
 from nodes.writer_critic_graph.writer_node.tools import fetch_article_content
+from utils.logging import describe_exception, log_exception
+
+log = get_logger(__name__)
 
 
 class WriterResult(TypedDict, total=False):
@@ -52,10 +56,11 @@ Real news ratio: {state["real_news_ratio"]}"""
 
     try:
         script = _truncate_script(invoke_agent(agent, prompt))
-    except AgentResponseError as e:
+    except AgentResponseError as exc:
+        log_exception(log, "writer.agent_failed", exc, article_url=state["article_url"])
         return {
             "is_fatal_error": True,
-            "error_message": f"Writer agent failed: {e}",
+            "error_message": f"Writer agent failed: {describe_exception(exc)}",
         }
 
     return {

@@ -12,6 +12,7 @@ from nodes.caption_node.response_format import CaptionAgentResponseFormat
 from nodes.caption_node.system_prompt import CAPTION_SYSTEM_PROMPT
 from nodes.state import PersonaRunState
 from nodes.utils import AgentResponseError, invoke_agent_response
+from utils.logging import describe_exception, log_exception
 
 log = get_logger(__name__)
 CAPTION_MAX_CHARS = 2200
@@ -75,9 +76,10 @@ def caption_node(state: PersonaRunState) -> CaptionResult:
     """
 
         response = invoke_agent_response(agent, prompt)
-    except AgentResponseError as e:
+    except AgentResponseError as exc:
+        log_exception(log, "caption.agent_failed", exc, persona_id=state["persona_id"])
         result["is_fatal_error"] = True
-        result["error_message"] = f"Caption agent failed: {e}"
+        result["error_message"] = f"Caption agent failed: {describe_exception(exc)}"
         return result
 
     parsed_output = response.get("structured_response")

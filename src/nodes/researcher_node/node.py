@@ -8,10 +8,14 @@ from sqlmodel import Session
 
 from config import settings
 from db import get_engine
+from logging_config import get_logger
 from models import Run
 from nodes.researcher_node.system_prompt import RESEARCHER_SYSTEM_PROMPT
 from nodes.researcher_node.tools import fetch_news_candidates
 from nodes.state import PersonaRunState
+from utils.logging import describe_exception, log_exception
+
+log = get_logger(__name__)
 
 
 class ResearcherResult(TypedDict, total=False):
@@ -59,7 +63,8 @@ def researcher_node(state: PersonaRunState) -> ResearcherResult:
     try:
         scored = _score_with_llm(candidates)
     except Exception as exc:
-        return {"is_fatal_error": True, "error_message": f"Scoring error: {exc}"}
+        log_exception(log, "researcher.scoring_failed", exc, run_id=run_id, candidate_count=len(candidates))
+        return {"is_fatal_error": True, "error_message": f"Scoring error: {describe_exception(exc)}"}
 
     if not scored:
         return {"is_fatal_error": True, "error_message": "No scored articles"}
@@ -78,6 +83,7 @@ def researcher_node(state: PersonaRunState) -> ResearcherResult:
             run.source_article_title = best["title"]
             session.commit()
     except Exception as exc:
-        return {"is_fatal_error": True, "error_message": f"DB error: {exc}"}
+        log_exception(log, "researcher.db_write_failed", exc, run_id=run_id, article_url=best["url"])
+        return {"is_fatal_error": True, "error_message": f"DB error: {describe_exception(exc)}"}
 
     return {}
