@@ -28,6 +28,10 @@ Each top-level node in `src/nodes/` accepts `PersonaRunState` and returns a part
 
 The `src/nodes/` folder also contains subgraph nodes (`writer_critic_graph`, `video_assembly_graph`) that encapsulate multiple internal nodes. Subgraph nodes might have their own state type (e.g. `WriterCriticState`) that replaces `PersonaRunState` with additional fields needed for the internal nodes.
 
+### Logging
+
+Prefer `utils.logging.log_exception(...)` at every handled exception site so tracebacks and structured context reach the console and JSONL log file. Keep user-facing error messages explicit by including the exception type, for example `KeyError: 'tiktok_account_id'`, instead of only `str(exc)`. Use `log.exception(...)` as the fallback at entrypoints for uncaught failures.
+
 ### Video providers
 
 `src/providers/video_provider.py` defines the `VideoProvider` Protocol. `StockVideoProvider` and `AIVideoProvider` implement it. Video is generated once per Run (shared); audio/captions are per Persona.
