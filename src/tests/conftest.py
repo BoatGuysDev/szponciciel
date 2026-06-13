@@ -4,6 +4,11 @@ import os
 # conftest-import time runs before pytest collects any test module, so the
 # lazy `db.database._engine` initialisation can never resolve a real file.
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+# Disable LangSmith/LangChain tracing during tests, even if the parent shell
+# or a local `.env` enables it.
+os.environ["LANGSMITH_TRACING"] = "false"
+os.environ["LANGCHAIN_TRACING_V2"] = "false"
+os.environ["LANGCHAIN_TRACING"] = "false"
 
 
 def pytest_configure(config):
