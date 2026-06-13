@@ -1,5 +1,6 @@
 import logging
 import sys
+from datetime import datetime
 
 import structlog
 from structlog.stdlib import BoundLogger, LoggerFactory, ProcessorFormatter
@@ -31,8 +32,23 @@ def _use_console_colors() -> bool:
     return settings.run_mode != "production" and sys.stdout.isatty()
 
 
+def _format_console_timestamp(timestamp: str) -> str:
+    if not timestamp:
+        return ""
+
+    normalized = timestamp.replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return timestamp
+
+    if parsed.tzinfo is not None:
+        parsed = parsed.replace(tzinfo=None)
+    return parsed.strftime("%Y-%m-%d %H:%M:%S:%f")
+
+
 def _console_renderer(_: object, __: str, event_dict: dict) -> str:
-    timestamp = event_dict.pop("timestamp", "")
+    timestamp = _format_console_timestamp(event_dict.pop("timestamp", ""))
     level = event_dict.pop("level", "").upper()
     message = event_dict.pop("event", "")
     exception = event_dict.pop("exception", None)
@@ -41,13 +57,13 @@ def _console_renderer(_: object, __: str, event_dict: dict) -> str:
     params = " ".join(f"{key}={value!r}" for key, value in sorted(event_dict.items()))
     rendered = " ".join(
         (
-            _color(timestamp, _DIM, enabled=use_colors),
+            _color(timestamp, _BOLD, enabled=use_colors),
             _color(f"{level:<7}", _LEVEL_COLORS.get(level, ""), enabled=use_colors),
             _color(str(message), _BOLD, enabled=use_colors),
         )
     )
     if params:
-        rendered = f"{rendered} {_color(params, _DIM, enabled=use_colors)}"
+        rendered = f"{rendered} {_color(params, _BOLD, enabled=use_colors)}"
     if exception:
         rendered = f"{rendered}\n{exception}"
     return rendered

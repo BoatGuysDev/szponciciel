@@ -19,7 +19,7 @@ def test_console_renderer_plain_when_not_tty(monkeypatch):
         },
     )
 
-    assert rendered == "2026-06-13T17:00:00Z INFO    node.start node='writer_node'"
+    assert rendered == "2026-06-13 17:00:00:000000 INFO    node.start node='writer_node'"
     assert "\033[" not in rendered
 
 
@@ -38,7 +38,7 @@ def test_console_renderer_uses_colors_for_local_tty(monkeypatch):
         },
     )
 
-    assert "\033[2m2026-06-13T17:00:00Z\033[0m" in rendered
+    assert "\033[1m2026-06-13 17:00:00:000000\033[0m" in rendered
     assert "\033[31mERROR  \033[0m" in rendered
     assert "\033[1mwriter.failed\033[0m" in rendered
-    assert "\033[2merror_type='AgentResponseError'\033[0m" in rendered
+    assert "\033[1merror_type='AgentResponseError'\033[0m" in rendered
