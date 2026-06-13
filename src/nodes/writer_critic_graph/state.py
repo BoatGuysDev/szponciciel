@@ -12,6 +12,7 @@ class Review(TypedDict):
 class WriterCriticState(TypedDict):
     article_url: str
     article_title: str
+    article_content: str | None
 
     persona_language: str
     persona_style: str

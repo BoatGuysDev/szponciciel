@@ -5,6 +5,7 @@ from langchain_tavily import TavilySearch
 
 from logging_config import get_logger
 from utils.logging import log_exception
+from utils.pipeline_log import tool_span
 
 log = get_logger(__name__)
 
@@ -31,7 +32,9 @@ def fetch_news_candidates(topic: str | None = None) -> list[dict]:
 
     for query in queries:
         try:
-            response = search.invoke({"query": query})
+            with tool_span("tavily.search", input={"query": query}) as call:
+                response = search.invoke({"query": query})
+                call["output"] = response
         except Exception as exc:
             log_exception(log, "researcher.news_fetch_failed", exc, query=query)
             continue

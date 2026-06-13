@@ -8,7 +8,7 @@ from nodes.state import PersonaRunState, end_if_fatal
 from nodes.tts_node.node import tts_node
 from nodes.video_assembly_graph.graph import video_assembly_graph
 from utils.agent_utils import LLM_RETRY
-from utils.graph_utils import build_error_handler
+from utils.graph_utils import build_error_handler, instrument_node
 
 log = get_logger(__name__)
 
@@ -44,20 +44,36 @@ _caption_error_handler = build_error_handler(
 def generate_tiktok_graph():
     graph = StateGraph(state_schema=PersonaRunState)
 
-    graph.add_node(narrator_node, retry_policy=LLM_RETRY, error_handler=_narrator_error_handler)
-    graph.add_node(tts_node, retry_policy=LLM_RETRY, error_handler=_tts_error_handler)
     graph.add_node(
-        select_background_node,
+        "narrator_node",
+        instrument_node("narrator_node", narrator_node),
+        retry_policy=LLM_RETRY,
+        error_handler=_narrator_error_handler,
+    )
+    graph.add_node(
+        "tts_node",
+        instrument_node("tts_node", tts_node),
+        retry_policy=LLM_RETRY,
+        error_handler=_tts_error_handler,
+    )
+    graph.add_node(
+        "select_background_node",
+        instrument_node("select_background_node", select_background_node),
         retry_policy=LLM_RETRY,
         error_handler=_background_error_handler,
     )
     graph.add_node(
         "video_assembly_subgraph",
-        video_assembly_graph(),
+        instrument_node("video_assembly_subgraph", video_assembly_graph()),
         retry_policy=LLM_RETRY,
         error_handler=_video_assembly_error_handler,
     )
-    graph.add_node(caption_node, retry_policy=LLM_RETRY, error_handler=_caption_error_handler)
+    graph.add_node(
+        "caption_node",
+        instrument_node("caption_node", caption_node),
+        retry_policy=LLM_RETRY,
+        error_handler=_caption_error_handler,
+    )
 
     graph.add_edge(START, "narrator_node")
     graph.add_conditional_edges("narrator_node", end_if_fatal("tts_node"), ["tts_node", END])

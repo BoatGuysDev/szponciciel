@@ -33,6 +33,9 @@ class PersonaRunState(TypedDict):
     content_type: Literal["real", "fake"]
     topic: str | None
     video_strategy: Literal["stock", "ai"]
+    source_article_url: str
+    source_article_title: str
+    source_article_content: str
     base_script: str
     narration: str
     tiktok_caption: str

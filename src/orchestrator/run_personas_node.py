@@ -9,6 +9,7 @@ from logging_config import get_logger
 from models import Persona, PersonaRun
 from nodes.persona_graph.graph import persona_graph
 from orchestrator.state import OrchestratorState, PersonaOutcome
+from utils.logging import describe_exception, log_exception
 
 log = get_logger(__name__)
 
@@ -53,19 +54,29 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
         structlog.contextvars.bind_contextvars(run_id=run_id, persona_id=persona_id)
         log.info("persona.start", content_type=content_type)
 
-        result = compiled.invoke(
-            {
-                "run_id": run_id,
-                "persona_id": persona_id,
-                "content_type": content_type,
-                "video_strategy": "stock",
-            },
-            config={
-                "run_name": f"persona:{persona_id}",
-                "metadata": {"run_id": run_id, "persona_id": persona_id},
-                "tags": [content_type],
-            },
-        )
+        try:
+            result = compiled.invoke(
+                {
+                    "run_id": run_id,
+                    "persona_id": persona_id,
+                    "content_type": content_type,
+                    "video_strategy": "stock",
+                    "source_article_url": state.get("source_article_url"),
+                    "source_article_title": state.get("source_article_title"),
+                    "source_article_content": state.get("source_article_content"),
+                },
+                config={
+                    "run_name": f"persona:{persona_id}",
+                    "metadata": {"run_id": run_id, "persona_id": persona_id},
+                    "tags": [content_type],
+                },
+            )
+        except Exception as exc:
+            log_exception(log, "persona.pipeline_failed", exc)
+            result = {
+                "is_fatal_error": True,
+                "error_message": f"Persona pipeline failed: {describe_exception(exc)}",
+            }
 
         status = "failed" if result.get("is_fatal_error") else "completed"
         if status == "failed":

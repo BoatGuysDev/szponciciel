@@ -4,7 +4,6 @@ from config import settings
 from nodes.writer_critic_graph.state import WriterCriticState
 from nodes.writer_critic_graph.writer_node.response_format import WriterAgentResponseFormat
 from nodes.writer_critic_graph.writer_node.system_prompt import WRITER_SYSTEM_PROMPT
-from nodes.writer_critic_graph.writer_node.tools import fetch_article_content
 from utils.agent_utils import call_agent
 
 
@@ -26,10 +25,15 @@ def _truncate_script(script: str) -> str:
 def writer_node(state: WriterCriticState) -> WriterResult:
     """Generates a TikTok script from article data and persona configuration."""
 
+    article_content = (state.get("article_content") or "").strip()
+    article_excerpt = article_content[: settings.max_script_length].strip()
+
     prompt = f"""Write a TikTok script for the following article:
 
 Title: {state["article_title"]}
 URL: {state["article_url"]}
+Article content:
+{article_excerpt or "No article excerpt was provided. Use the title and URL context only."}
 
 Language: {state["persona_language"]}
 Style: {state["persona_style"]}
@@ -47,7 +51,6 @@ Real news ratio: {state["real_news_ratio"]}"""
             WRITER_SYSTEM_PROMPT,
             WriterAgentResponseFormat,
             prompt=prompt,
-            tools=[fetch_article_content],
         ).draft_script
     )
 

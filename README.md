@@ -61,8 +61,8 @@ Copy `.env.example` to `.env` and fill in the values. The variables:
 |---|---|---|---|
 | `DATABASE_URL` | Full SQLAlchemy URL. Required (no implicit default). Test runs are pinned to `sqlite:///:memory:` by `src/tests/conftest.py` regardless of this value | Yes | — |
 | `RUN_MODE` | Application mode flag for non-DB behaviours. Valid values: `development`, `test`, `production` | No | `development` |
-| `LOG_LEVEL` | Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR`. Console stays live and human-readable in development; JSON is written to a log file in parallel | No | `INFO` |
-| `LOG_FILE` | JSONL file path for structured logs. Relative paths are resolved from the project root | No | `runs/logs/pipeline.jsonl` |
+| `LOG_LEVEL` | Logging level for live console logs: `DEBUG`, `INFO`, `WARNING`, `ERROR` | No | `INFO` |
+| `LOG_FILE` | JSONL file path for completed pipeline run artifacts. Each line is one wide structured event for a whole run | No | `runs/logs/pipeline.jsonl` |
 | `COMPUTE_DEVICE` | Coqui TTS + WhisperX device: `cpu`, `cuda`, or `mps` | No | `cpu` |
 | `WHISPER_MODEL` | WhisperX model size for `align_node`: `tiny`, `base`, `small`, `medium`, `large-v3` | No | `base` |
 | `TTS_MODEL` | Coqui TTS model name used by `tts_node` | No | `tts_models/multilingual/multi-dataset/xtts_v2` |
@@ -106,7 +106,7 @@ uv run langgraph dev
 This serves the graph at `http://127.0.0.1:2024` and prints a Studio URL:
 `https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024`. Open it, submit `{ "prompt": "..." }`, and watch the run live.
 
-Local runs also print readable logs to stdout while writing structured JSONL events to `runs/logs/pipeline.jsonl` by default.
+Local runs print readable logs to stdout as the pipeline executes. At finalize time, the app appends one structured JSON object per run to `runs/logs/pipeline.jsonl`, including node timings, agent calls, tool calls, inputs, outputs, outcomes, and errors.
 
 > **"Failed to fetch" / "Failed to initialize Studio" while the server is running?** The browser is blocking an HTTPS Studio page from calling `http://localhost`. Use Chrome (it allows localhost), or run `uv run langgraph dev --tunnel` to expose an HTTPS endpoint Studio can reach.
 

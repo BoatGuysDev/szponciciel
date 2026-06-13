@@ -5,16 +5,67 @@ import structlog
 from structlog.stdlib import BoundLogger, LoggerFactory, ProcessorFormatter
 
 from config import settings
+from utils.pipeline_log import record_log_event
 
 _configured = False
 
+_RESET = "\033[0m"
+_BOLD = "\033[1m"
+_DIM = "\033[2m"
+_LEVEL_COLORS = {
+    "DEBUG": "\033[36m",
+    "INFO": "\033[32m",
+    "WARNING": "\033[33m",
+    "ERROR": "\033[31m",
+    "CRITICAL": "\033[1;31m",
+}
+
+
+def _color(text: str, code: str, *, enabled: bool) -> str:
+    if not enabled or not code:
+        return text
+    return f"{code}{text}{_RESET}"
+
+
+def _use_console_colors() -> bool:
+    return settings.run_mode != "production" and sys.stdout.isatty()
+
+
+def _console_renderer(_: object, __: str, event_dict: dict) -> str:
+    timestamp = event_dict.pop("timestamp", "")
+    level = event_dict.pop("level", "").upper()
+    message = event_dict.pop("event", "")
+    exception = event_dict.pop("exception", None)
+    use_colors = _use_console_colors()
+
+    params = " ".join(f"{key}={value!r}" for key, value in sorted(event_dict.items()))
+    rendered = " ".join(
+        (
+            _color(timestamp, _DIM, enabled=use_colors),
+            _color(f"{level:<7}", _LEVEL_COLORS.get(level, ""), enabled=use_colors),
+            _color(str(message), _BOLD, enabled=use_colors),
+        )
+    )
+    if params:
+        rendered = f"{rendered} {_color(params, _DIM, enabled=use_colors)}"
+    if exception:
+        rendered = f"{rendered}\n{exception}"
+    return rendered
+
+
+def _record_app_event(_: object, __: str, event_dict: dict) -> dict:
+    record_log_event(event_dict)
+    return event_dict
+
 
 def setup_logging() -> None:
-    """Configures live console logs and a JSON log file once.
+    """Configures live console logs once.
 
     Idempotent - safe to call from every entrypoint (CLI, langgraph dev).
     Bound context vars (run_id, persona_id) are merged into every event, so
     nodes only need ``get_logger(__name__)`` and the orchestrator binds context.
+    Structured run logs are accumulated by ``utils.pipeline_log`` and flushed
+    once per run in ``finalize_node``.
     """
 
     global _configured
@@ -27,12 +78,8 @@ def setup_logging() -> None:
         structlog.processors.add_log_level,
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
+        _record_app_event,
     ]
-    console_renderer = (
-        structlog.processors.JSONRenderer() if settings.run_mode == "production" else structlog.dev.ConsoleRenderer()
-    )
-    settings.log_file.parent.mkdir(parents=True, exist_ok=True)
 
     structlog.configure(
         processors=shared_processors + [ProcessorFormatter.wrap_for_formatter],
@@ -49,23 +96,27 @@ def setup_logging() -> None:
     console_handler.setLevel(level)
     console_handler.setFormatter(
         ProcessorFormatter(
-            processors=[ProcessorFormatter.remove_processors_meta, console_renderer],
+            processors=[
+                ProcessorFormatter.remove_processors_meta,
+                structlog.processors.format_exc_info,
+                _console_renderer,
+            ],
             foreign_pre_chain=shared_processors,
         )
     )
     root.addHandler(console_handler)
 
-    file_handler = logging.FileHandler(settings.log_file, encoding="utf-8")
-    file_handler.setLevel(level)
-    file_handler.setFormatter(
-        ProcessorFormatter(
-            processors=[ProcessorFormatter.remove_processors_meta, structlog.processors.JSONRenderer()],
-            foreign_pre_chain=shared_processors,
-        )
-    )
-    root.addHandler(file_handler)
-
-    for noisy in ("httpx", "httpcore", "urllib3"):
+    for noisy in (
+        "httpx",
+        "httpcore",
+        "urllib3",
+        "langchain",
+        "langchain_core",
+        "langchain_google_genai",
+        "langgraph",
+        "google",
+        "google_genai",
+    ):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
     _configured = True

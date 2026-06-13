@@ -12,9 +12,13 @@ from models import Run
 from nodes.researcher_node.system_prompt import RESEARCHER_SYSTEM_PROMPT
 from nodes.researcher_node.tools import fetch_news_candidates
 from nodes.state import PersonaRunState
+from utils.pipeline_log import agent_span, tool_span
 
 
 class ResearcherResult(TypedDict, total=False):
+    source_article_url: str
+    source_article_title: str
+    source_article_content: str
     is_fatal_error: bool
     error_message: str | None
 
@@ -32,7 +36,16 @@ def _score_with_llm(candidates: list[dict]) -> list[dict]:
     summary = "\n".join(f"[{i}] {c['title']} — {c['content'][:300]}" for i, c in enumerate(candidates))
     llm = ChatGoogleGenerativeAI(model=settings.llm_model)
     structured = llm.with_structured_output(_ArticleRanking)
-    ranking: _ArticleRanking = structured.invoke(f"{RESEARCHER_SYSTEM_PROMPT}\n\nCandidates:\n{summary}")
+    prompt = f"{RESEARCHER_SYSTEM_PROMPT}\n\nCandidates:\n{summary}"
+    with agent_span(
+        "researcher.score_articles",
+        model=settings.llm_model,
+        prompt=prompt,
+        response_format=_ArticleRanking.__name__,
+        system_prompt=RESEARCHER_SYSTEM_PROMPT,
+    ) as call:
+        ranking: _ArticleRanking = structured.invoke(prompt)
+        call["output"] = ranking
 
     scored: list[dict] = []
     for entry in ranking.rankings:
@@ -52,7 +65,10 @@ def researcher_node(state: PersonaRunState) -> ResearcherResult:
         if not session.get(Run, run_id):
             return {"is_fatal_error": True, "error_message": f"Run {run_id} not found"}
 
-    candidates = fetch_news_candidates.invoke({"topic": state.get("topic")})
+    fetch_input = {"topic": state.get("topic")}
+    with tool_span("fetch_news_candidates", input=fetch_input) as call:
+        candidates = fetch_news_candidates.invoke(fetch_input)
+        call["output"] = candidates
     if not candidates:
         return {"is_fatal_error": True, "error_message": "No articles found"}
 
@@ -74,4 +90,8 @@ def researcher_node(state: PersonaRunState) -> ResearcherResult:
         run.source_article_title = best["title"]
         session.commit()
 
-    return {}
+    return {
+        "source_article_url": best["url"],
+        "source_article_title": best["title"],
+        "source_article_content": best["content"],
+    }

@@ -13,6 +13,9 @@ class OrchestratorState(TypedDict, total=False):
     prompt: str | None  # raw user instruction / meta-prompt
     topic: str | None  # parsed topic, or None for a generic category sweep
     run_id: str
+    source_article_url: str
+    source_article_title: str
+    source_article_content: str
     persona_ids: list[str]
     outcomes: list[PersonaOutcome]
     is_fatal_error: bool

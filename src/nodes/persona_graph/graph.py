@@ -6,7 +6,7 @@ from nodes.state import PersonaRunState, end_if_fatal
 from nodes.upload_node.node import upload_node
 from nodes.writer_critic_graph.graph import writer_critic_graph
 from utils.agent_utils import LLM_RETRY
-from utils.graph_utils import build_error_handler
+from utils.graph_utils import build_error_handler, instrument_node
 
 log = get_logger(__name__)
 
@@ -35,17 +35,22 @@ def persona_graph():
 
     graph.add_node(
         "writer_critic",
-        writer_critic_graph,
+        instrument_node("writer_critic", writer_critic_graph),
         retry_policy=LLM_RETRY,
         error_handler=_writer_critic_error_handler,
     )
     graph.add_node(
         "generate_tiktok_subgraph",
-        generate_tiktok_graph(),
+        instrument_node("generate_tiktok_subgraph", generate_tiktok_graph()),
         retry_policy=LLM_RETRY,
         error_handler=_generate_tiktok_error_handler,
     )
-    graph.add_node(upload_node, retry_policy=LLM_RETRY, error_handler=_upload_error_handler)
+    graph.add_node(
+        "upload_node",
+        instrument_node("upload_node", upload_node),
+        retry_policy=LLM_RETRY,
+        error_handler=_upload_error_handler,
+    )
 
     graph.add_edge(START, "writer_critic")
     graph.add_conditional_edges(

@@ -24,6 +24,7 @@ _critic_error_handler = build_error_handler(
 BASE_STATE: WriterCriticState = {
     "article_url": "https://example.com/article",
     "article_title": "Big news story",
+    "article_content": "The article says this is huge.",
     "persona_language": "en",
     "persona_style": "dramatic",
     "persona_tone": "serious",

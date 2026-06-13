@@ -23,6 +23,7 @@ _writer_error_handler = build_error_handler(
 BASE_STATE: WriterCriticState = {
     "article_url": "https://example.com/article",
     "article_title": "Big news story",
+    "article_content": "The article says the home team won 4-1 after a dominant first half.",
     "persona_language": "en",
     "persona_style": "dramatic",
     "persona_tone": "serious",
@@ -50,16 +51,16 @@ class TestWriterNode(BaseTestClass):
         """Script is set and iterations increments to 1 on a clean first pass."""
 
         expected_script = "Breaking news! This is huge."
-        with (
-            patch(
-                "nodes.writer_critic_graph.writer_node.node.call_agent",
-                return_value=WriterAgentResponseFormat(draft_script=expected_script),
-            ),
-        ):
+        with patch(
+            "nodes.writer_critic_graph.writer_node.node.call_agent",
+            return_value=WriterAgentResponseFormat(draft_script=expected_script),
+        ) as mock_call_agent:
             result = graph.compile().invoke(BASE_STATE)
 
         assert result["draft_script"] == expected_script
         assert not result.get("is_fatal_error")
+        assert "tools" not in mock_call_agent.call_args.kwargs
+        assert BASE_STATE["article_content"] in mock_call_agent.call_args.kwargs["prompt"]
 
     def test_successful_with_corrections(self, graph: StateGraph):
         """Corrections from the critic are appended to the prompt on subsequent iterations."""

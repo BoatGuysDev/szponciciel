@@ -7,7 +7,7 @@ from orchestrator.intake_node import intake_node
 from orchestrator.run_personas_node import run_personas_node
 from orchestrator.state import OrchestratorState
 from utils.agent_utils import LLM_RETRY
-from utils.graph_utils import build_error_handler
+from utils.graph_utils import build_error_handler, instrument_node
 
 log = get_logger(__name__)
 
@@ -34,15 +34,27 @@ def build_orchestrator():
     setup_logging()
     graph = StateGraph(OrchestratorState)
 
-    graph.add_node("intake", intake_node, retry_policy=LLM_RETRY, error_handler=_intake_error_handler)
-    graph.add_node("research", researcher_node, retry_policy=LLM_RETRY, error_handler=_research_error_handler)
+    graph.add_node(
+        "intake", instrument_node("intake", intake_node), retry_policy=LLM_RETRY, error_handler=_intake_error_handler
+    )
+    graph.add_node(
+        "research",
+        instrument_node("research", researcher_node),
+        retry_policy=LLM_RETRY,
+        error_handler=_research_error_handler,
+    )
     graph.add_node(
         "run_personas",
-        run_personas_node,
+        instrument_node("run_personas", run_personas_node),
         retry_policy=LLM_RETRY,
         error_handler=_run_personas_error_handler,
     )
-    graph.add_node("finalize", finalize_node, retry_policy=LLM_RETRY, error_handler=_finalize_error_handler)
+    graph.add_node(
+        "finalize",
+        finalize_node,
+        retry_policy=LLM_RETRY,
+        error_handler=_finalize_error_handler,
+    )
 
     graph.add_edge(START, "intake")
     graph.add_conditional_edges("intake", _after_intake, ["research", "finalize"])

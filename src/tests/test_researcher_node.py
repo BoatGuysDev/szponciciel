@@ -78,6 +78,9 @@ class TestResearcherNode(BaseTestClass):
             result = graph.compile().invoke({"run_id": run_id})
 
         assert "is_fatal_error" not in result
+        assert result["source_article_content"] == "..."
+        assert result["source_article_title"] == "High"
+        assert result["source_article_url"] == "https://example.com/high"
 
         with Session(engine) as session:
             run = session.get(Run, run_id)

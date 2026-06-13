@@ -9,7 +9,7 @@ from nodes.video_assembly_graph.align_node.node import align_node
 from nodes.video_assembly_graph.compose_node.node import compose_node
 from nodes.video_assembly_graph.compose_node.simple_node import compose_simple_node
 from utils.agent_utils import LLM_RETRY
-from utils.graph_utils import build_error_handler
+from utils.graph_utils import build_error_handler, instrument_node
 
 log = get_logger(__name__)
 
@@ -42,10 +42,21 @@ def _router(state: PersonaRunState) -> str:
 def video_assembly_graph():
     graph = StateGraph(state_schema=PersonaRunState)
 
-    graph.add_node(align_node, retry_policy=LLM_RETRY, error_handler=_align_error_handler)
-    graph.add_node(compose_node, retry_policy=LLM_RETRY, error_handler=_compose_error_handler)
     graph.add_node(
-        compose_simple_node,
+        "align_node",
+        instrument_node("align_node", align_node),
+        retry_policy=LLM_RETRY,
+        error_handler=_align_error_handler,
+    )
+    graph.add_node(
+        "compose_node",
+        instrument_node("compose_node", compose_node),
+        retry_policy=LLM_RETRY,
+        error_handler=_compose_error_handler,
+    )
+    graph.add_node(
+        "compose_simple_node",
+        instrument_node("compose_simple_node", compose_simple_node),
         retry_policy=LLM_RETRY,
         error_handler=_simple_compose_error_handler,
     )

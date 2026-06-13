@@ -11,7 +11,7 @@ from nodes.writer_critic_graph.critic_node.node import critic_node
 from nodes.writer_critic_graph.state import Review, WriterCriticState
 from nodes.writer_critic_graph.writer_node.node import writer_node
 from utils.agent_utils import LLM_RETRY
-from utils.graph_utils import build_error_handler
+from utils.graph_utils import build_error_handler, instrument_node
 
 log = get_logger(__name__)
 
@@ -49,8 +49,18 @@ def _critic_router(state: WriterCriticState) -> str:
 def _build_graph():
     graph_builder = StateGraph(WriterCriticState)
 
-    graph_builder.add_node(writer_node, retry_policy=LLM_RETRY, error_handler=_writer_error_handler)
-    graph_builder.add_node(critic_node, retry_policy=LLM_RETRY, error_handler=_critic_error_handler)
+    graph_builder.add_node(
+        "writer_node",
+        instrument_node("writer_node", writer_node),
+        retry_policy=LLM_RETRY,
+        error_handler=_writer_error_handler,
+    )
+    graph_builder.add_node(
+        "critic_node",
+        instrument_node("critic_node", critic_node),
+        retry_policy=LLM_RETRY,
+        error_handler=_critic_error_handler,
+    )
 
     graph_builder.add_edge(START, "writer_node")
     graph_builder.add_conditional_edges("writer_node", _writer_router)
@@ -91,6 +101,7 @@ def writer_critic_graph(state: PersonaRunState) -> WriterCriticResult:
     base_state: WriterCriticState = {
         "article_url": run.source_article_url,
         "article_title": run.source_article_title,
+        "article_content": state.get("source_article_content"),
         "persona_language": persona.language,
         "persona_style": persona.style,
         "persona_tone": persona.tone,

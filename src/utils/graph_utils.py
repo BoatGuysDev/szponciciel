@@ -5,6 +5,7 @@ from langgraph.errors import NodeError
 from structlog.stdlib import BoundLogger
 
 from utils.logging import describe_exception, log_exception
+from utils.pipeline_log import instrument_node, record_error
 
 
 def build_error_handler(
@@ -18,6 +19,7 @@ def build_error_handler(
 
     def error_handler(state: dict[str, Any], error: NodeError) -> dict[str, Any]:
         context = {key: state.get(key) for key in context_keys if state.get(key) is not None}
+        record_error(error.error, node=error.node, **context)
         log_exception(log, event, error.error, node=error.node, **context)
         return {
             "is_fatal_error": True,
@@ -25,3 +27,6 @@ def build_error_handler(
         }
 
     return error_handler
+
+
+__all__ = ["build_error_handler", "instrument_node"]

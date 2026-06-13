@@ -34,7 +34,9 @@ The `src/nodes/` folder also contains subgraph nodes (`writer_critic_graph`, `vi
 
 ### Logging
 
-Prefer `utils.logging.log_exception(...)` at every handled exception site so tracebacks and structured context reach the console and JSONL log file. Keep user-facing error messages explicit by including the exception type, for example `KeyError: 'tiktok_account_id'`, instead of only `str(exc)`. Use `log.exception(...)` as the fallback at entrypoints for uncaught failures.
+Prefer `utils.logging.log_exception(...)` at every handled exception site so tracebacks and structured context reach the console and the final pipeline run artifact. Keep user-facing error messages explicit by including the exception type, for example `KeyError: 'tiktok_account_id'`, instead of only `str(exc)`. Use `log.exception(...)` as the fallback at entrypoints for uncaught failures.
+
+Console logs are live and human-readable. Do not add a file handler for ordinary log events. `runs/logs/pipeline.jsonl` should contain one wide structured JSON object per completed run, written by `utils.pipeline_log.finish_run(...)` from `finalize_node`.
 
 ### Agent calls
 

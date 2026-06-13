@@ -8,6 +8,7 @@ from langgraph.types import RetryPolicy
 from pydantic import BaseModel
 
 from config import settings
+from utils.pipeline_log import agent_span
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -32,21 +33,36 @@ def call_agent(
 
     agent = _agent
     if agent is None:
+        resolved_model = model or settings.llm_model
         kwargs: dict[str, Any] = {
-            "model": ChatGoogleGenerativeAI(model=model or settings.llm_model),
+            "model": ChatGoogleGenerativeAI(model=resolved_model),
             "system_prompt": system_prompt,
             "response_format": response_format,
         }
         if tools is not None:
             kwargs["tools"] = list(tools)
         agent = create_agent(**kwargs)
+    else:
+        resolved_model = model or settings.llm_model
 
-    response = agent.invoke({"messages": [HumanMessage(content=prompt)]})
-    if not isinstance(response, dict):
-        raise AgentResponseError("Agent response was not a mapping.")
+    tool_names = [getattr(tool, "name", getattr(tool, "__name__", repr(tool))) for tool in tools or []]
+    with agent_span(
+        response_format.__name__,
+        model=resolved_model,
+        prompt=prompt,
+        response_format=response_format.__name__,
+        system_prompt=system_prompt,
+        tools=tool_names,
+    ) as call:
+        response = agent.invoke({"messages": [HumanMessage(content=prompt)]})
+        call["raw_output"] = response
 
-    structured_response = response.get("structured_response")
-    if structured_response is None:
-        raise AgentResponseError("Agent response did not include structured_response.")
+        if not isinstance(response, dict):
+            raise AgentResponseError("Agent response was not a mapping.")
 
-    return cast(T, structured_response)
+        structured_response = response.get("structured_response")
+        if structured_response is None:
+            raise AgentResponseError("Agent response did not include structured_response.")
+
+        call["output"] = structured_response
+        return cast(T, structured_response)

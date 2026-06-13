@@ -7,6 +7,7 @@ from db import get_engine
 from logging_config import get_logger
 from models import Persona, Run
 from orchestrator.state import OrchestratorState
+from utils.pipeline_log import agent_span, node_span, start_run, update_run
 
 log = get_logger(__name__)
 
@@ -28,7 +29,15 @@ class _TopicExtraction(BaseModel):
 def _extract_topic(prompt: str) -> str | None:
     llm = ChatGoogleGenerativeAI(model=settings.llm_model)
     structured = llm.with_structured_output(_TopicExtraction)
-    result: _TopicExtraction = structured.invoke(f"{INTAKE_SYSTEM_PROMPT}\n\nInstruction:\n{prompt}")
+    agent_prompt = f"{INTAKE_SYSTEM_PROMPT}\n\nInstruction:\n{prompt}"
+    with agent_span(
+        "intake.extract_topic",
+        model=settings.llm_model,
+        prompt=agent_prompt,
+        response_format=_TopicExtraction.__name__,
+    ) as call:
+        result: _TopicExtraction = structured.invoke(agent_prompt)
+        call["output"] = result
     topic = (result.topic or "").strip()
     return topic or None
 
@@ -45,21 +54,26 @@ def intake_node(state: OrchestratorState) -> OrchestratorState:
 
     topic: str | None = None
     prompt = (state.get("prompt") or "").strip()
-    if prompt:
-        topic = _extract_topic(prompt)
 
-    with Session(get_engine()) as session:
-        personas = session.exec(select(Persona).where(Persona.is_active)).all()
-        persona_ids = [p.id for p in personas]
+    start_run(run_id, prompt=prompt)
+    with node_span(run_id, "intake", parameters={"prompt": prompt}):
+        if prompt:
+            topic = _extract_topic(prompt)
 
-    if not persona_ids:
-        log.error("intake.no_active_personas", run_id=run_id)
-        return {
-            "run_id": run_id,
-            "topic": topic,
-            "is_fatal_error": True,
-            "error_message": "No active personas to run.",
-        }
+        with Session(get_engine()) as session:
+            personas = session.exec(select(Persona).where(Persona.is_active)).all()
+            persona_ids = [p.id for p in personas]
 
-    log.info("intake.ready", run_id=run_id, topic=topic, personas=len(persona_ids))
-    return {"run_id": run_id, "topic": topic, "persona_ids": persona_ids}
+        update_run(run_id, topic=topic, persona_ids=persona_ids)
+
+        if not persona_ids:
+            log.error("intake.no_active_personas", run_id=run_id)
+            return {
+                "run_id": run_id,
+                "topic": topic,
+                "is_fatal_error": True,
+                "error_message": "No active personas to run.",
+            }
+
+        log.info("intake.ready", run_id=run_id, topic=topic, personas=len(persona_ids))
+        return {"run_id": run_id, "topic": topic, "persona_ids": persona_ids}
