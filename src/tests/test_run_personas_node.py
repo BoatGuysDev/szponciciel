@@ -64,12 +64,16 @@ class TestRunPersonasNode(BaseTestClass):
 
         # both personas processed despite p2 failing
         assert mock_compiled.invoke.call_count == 2
+        first_state = mock_compiled.invoke.call_args_list[0].args[0]
+        assert first_state["story_mode"] in {"real_news", "fictional_news"}
+        assert "content_type" not in first_state
 
         with Session(engine) as session:
             rows = session.exec(select(PersonaRun).where(PersonaRun.run_id == run_id)).all()
             by_persona = {r.persona_id: r for r in rows}
             assert by_persona["p1"].status == "completed"
             assert by_persona["p1"].tiktok_post_id == "post-123"
+            assert by_persona["p1"].story_mode in {"real_news", "fictional_news"}
             assert by_persona["p2"].status == "failed"
             assert by_persona["p2"].error_message == "boom"
 

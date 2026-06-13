@@ -61,6 +61,7 @@ def caption_node(state: PersonaRunState) -> CaptionResult:
     prompt = f"""
         Create a TikTok post caption for the following narration: {state["narration"]}
 
+        Story mode: {state.get("story_mode", "real_news")}.
         The caption must be in {persona.language} and match the following style and tone: {persona.style}, {persona.tone}.
     """
 

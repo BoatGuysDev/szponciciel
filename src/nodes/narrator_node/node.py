@@ -44,6 +44,7 @@ def narrator_node(state: PersonaRunState) -> NarratorResult:
     prompt = f"""
         Create a narration for the following script: {base_script}
 
+        Story mode: {state.get("story_mode", "real_news")}.
         The narration must be in {persona.language} and match the following style and tone: {persona.style}, {persona.tone}.
     """
 

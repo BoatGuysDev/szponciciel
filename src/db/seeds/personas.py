@@ -11,12 +11,12 @@ def load() -> int:
         Persona(
             id="ground_truth_media",
             tiktok_account_id=settings.ground_truth_media_account_id,
-            style="neutral, factual",
-            tone="informative",
+            style="fictional news documentary",
+            tone="confident, straight-faced",
             language="en",
             voice_speaker="Claribel Dervla",
             show_captions=True,
-            real_news_ratio=0.1,
+            fictional_news_ratio=0.9,
             is_active=True,
         ),
         # Add more personas here

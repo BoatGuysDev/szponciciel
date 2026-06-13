@@ -11,7 +11,7 @@ class PersonaRun(SQLModel, table=True):
     run_id: str = Field(foreign_key="runs.id")
     persona_id: str = Field(foreign_key="personas.id")
     status: str = "pending"  # "pending" | "running" | "completed" | "failed"
-    content_type: str | None = None  # "real" | "fake"
+    story_mode: str | None = None  # "real_news" | "fictional_news"
     narration: str | None = None
     tiktok_caption: str | None = None
     audio_path: str | None = None

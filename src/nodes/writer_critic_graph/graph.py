@@ -8,7 +8,7 @@ from logging_config import get_logger
 from models import Persona, Run
 from nodes.state import PersonaRunState
 from nodes.writer_critic_graph.critic_node.node import critic_node
-from nodes.writer_critic_graph.state import Review, WriterCriticState
+from nodes.writer_critic_graph.state import WriterCriticState
 from nodes.writer_critic_graph.writer_node.node import writer_node
 from utils.agent_utils import LLM_RETRY
 from utils.graph_utils import build_error_handler, instrument_node
@@ -29,21 +29,12 @@ def _writer_router(state: WriterCriticState) -> str:
     return END if state["is_fatal_error"] else "critic_node"
 
 
-def _reliability_score(review: Review) -> float:
-    return (
-        review["coherence_score"] + review["grammar_score"] + review["unambiguity_score"] + review["catchiness_score"]
-    ) / 4
-
-
 def _critic_router(state: WriterCriticState) -> str:
-    if (
-        state["is_fatal_error"]
-        or state["iterations"] == settings.writer_critic_max_iters
-        or _reliability_score(state["review"]) >= settings.script_reliability_threshold
-    ):
+    if state["is_fatal_error"] or state["iterations"] == settings.writer_critic_max_iters:
         return END
-    else:
+    if state["review"]["needs_revision"]:
         return "writer_node"
+    return END
 
 
 def _build_graph():
@@ -105,7 +96,7 @@ def writer_critic_graph(state: PersonaRunState) -> WriterCriticResult:
         "persona_language": persona.language,
         "persona_style": persona.style,
         "persona_tone": persona.tone,
-        "real_news_ratio": persona.real_news_ratio,
+        "story_mode": state["story_mode"],
         "draft_script": None,
         "review": None,
         "iterations": 0,

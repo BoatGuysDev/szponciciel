@@ -137,7 +137,11 @@ class TestCaptionNode(BaseTestClass):
 
             with patch(
                 "nodes.caption_node.node.call_agent",
-                return_value=CaptionAgentResponseFormat(caption=expected_caption, hashtags=expected_hashtags),
+                return_value=CaptionAgentResponseFormat(
+                    caption=expected_caption,
+                    hashtags=expected_hashtags,
+                    diagnostic_reasoning="Caption follows the narration.",
+                ),
             ):
                 result = graph.compile().invoke({"persona_id": "1", "narration": "Some narration text."})
 
@@ -156,7 +160,11 @@ class TestCaptionNode(BaseTestClass):
 
             with patch(
                 "nodes.caption_node.node.call_agent",
-                return_value=CaptionAgentResponseFormat(caption=long_caption, hashtags=["#news"] * 5),
+                return_value=CaptionAgentResponseFormat(
+                    caption=long_caption,
+                    hashtags=["#news"] * 5,
+                    diagnostic_reasoning="Caption follows the narration.",
+                ),
             ):
                 result = graph.compile().invoke({"persona_id": "1", "narration": "Some narration text."})
 

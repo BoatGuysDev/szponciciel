@@ -28,7 +28,7 @@ BASE_STATE: WriterCriticState = {
     "persona_language": "en",
     "persona_style": "dramatic",
     "persona_tone": "serious",
-    "real_news_ratio": 0.8,
+    "story_mode": "real_news",
     "draft_script": None,
     "review": None,
     "iterations": 0,
@@ -54,7 +54,10 @@ class TestWriterNode(BaseTestClass):
         expected_script = "Breaking news! This is huge."
         with patch(
             "nodes.writer_critic_graph.writer_node.node.call_agent",
-            return_value=WriterAgentResponseFormat(draft_script=expected_script),
+            return_value=WriterAgentResponseFormat(
+                draft_script=expected_script,
+                diagnostic_reasoning="Grounded in the source article.",
+            ),
         ) as mock_call_agent:
             result = graph.compile().invoke(BASE_STATE)
 
@@ -72,17 +75,24 @@ class TestWriterNode(BaseTestClass):
             **BASE_STATE,
             "draft_script": draft_script,
             "review": {
-                "coherence_score": 0.7,
-                "grammar_score": 0.8,
-                "unambiguity_score": 0.6,
+                "mode_compliance_score": 0.7,
+                "fact_policy_score": 0.8,
+                "persona_fit_score": 0.6,
+                "language_score": 0.9,
+                "narrative_confidence_score": 0.5,
                 "catchiness_score": 0.5,
+                "needs_revision": True,
+                "diagnostic_reasoning": "Needs a tighter opening.",
                 "corrections": corrections,
             },
             "iterations": 1,
         }
         with patch(
             "nodes.writer_critic_graph.writer_node.node.call_agent",
-            return_value=WriterAgentResponseFormat(draft_script="Revised script here."),
+            return_value=WriterAgentResponseFormat(
+                draft_script="Revised script here.",
+                diagnostic_reasoning="Applied critic corrections.",
+            ),
         ) as mock_call_agent:
             graph.compile().invoke(state)
 
@@ -97,7 +107,10 @@ class TestWriterNode(BaseTestClass):
         with (
             patch(
                 "nodes.writer_critic_graph.writer_node.node.call_agent",
-                return_value=WriterAgentResponseFormat(draft_script=long_content),
+                return_value=WriterAgentResponseFormat(
+                    draft_script=long_content,
+                    diagnostic_reasoning="Long draft for truncation test.",
+                ),
             ),
         ):
             result = graph.compile().invoke(BASE_STATE)

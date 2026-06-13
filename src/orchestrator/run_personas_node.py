@@ -37,13 +37,12 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
                     }
                 )
                 continue
-            ratio = persona.real_news_ratio
-            content_type = "real" if random.random() < ratio else "fake"
+            story_mode = "fictional_news" if random.random() < persona.fictional_news_ratio else "real_news"
             persona_run = PersonaRun(
                 run_id=run_id,
                 persona_id=persona_id,
                 status="running",
-                content_type=content_type,
+                story_mode=story_mode,
                 started_at=datetime.now(timezone.utc),
             )
             session.add(persona_run)
@@ -52,14 +51,14 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
             persona_run_id = persona_run.id
 
         structlog.contextvars.bind_contextvars(run_id=run_id, persona_id=persona_id)
-        log.info("persona.start", content_type=content_type)
+        log.info("persona.start", story_mode=story_mode)
 
         try:
             result = compiled.invoke(
                 {
                     "run_id": run_id,
                     "persona_id": persona_id,
-                    "content_type": content_type,
+                    "story_mode": story_mode,
                     "video_strategy": "stock",
                     "source_article_url": state.get("source_article_url"),
                     "source_article_title": state.get("source_article_title"),
@@ -68,7 +67,7 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
                 config={
                     "run_name": f"persona:{persona_id}",
                     "metadata": {"run_id": run_id, "persona_id": persona_id},
-                    "tags": [content_type],
+                    "tags": [story_mode],
                 },
             )
         except Exception as exc:

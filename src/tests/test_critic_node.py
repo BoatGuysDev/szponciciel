@@ -29,7 +29,7 @@ BASE_STATE: WriterCriticState = {
     "persona_language": "en",
     "persona_style": "dramatic",
     "persona_tone": "serious",
-    "real_news_ratio": 0.8,
+    "story_mode": "real_news",
     "draft_script": "Breaking news! This is huge.",
     "review": None,
     "iterations": 0,
@@ -50,13 +50,17 @@ class TestCriticNode(BaseTestClass):
         return graph
 
     def test_successful_review(self, graph: StateGraph):
-        """Reliability score is the mean of the four sub-scores; iterations increments."""
+        """Structured review is stored and iterations increments."""
 
         parsed = CriticAgentResponseFormat(
-            coherence_score=0.8,
-            grammar_score=1.0,
-            unambiguity_score=0.6,
+            mode_compliance_score=0.8,
+            fact_policy_score=1.0,
+            persona_fit_score=0.7,
+            language_score=1.0,
+            narrative_confidence_score=0.6,
             catchiness_score=0.4,
+            needs_revision=True,
+            diagnostic_reasoning="The script needs a punchier opening.",
             corrections="Punch up the opening line.",
         )
         with patch(
@@ -67,10 +71,14 @@ class TestCriticNode(BaseTestClass):
 
         assert not result.get("is_fatal_error")
         assert result["review"] == {
-            "coherence_score": 0.8,
-            "grammar_score": 1.0,
-            "unambiguity_score": 0.6,
+            "mode_compliance_score": 0.8,
+            "fact_policy_score": 1.0,
+            "persona_fit_score": 0.7,
+            "language_score": 1.0,
+            "narrative_confidence_score": 0.6,
             "catchiness_score": 0.4,
+            "needs_revision": True,
+            "diagnostic_reasoning": "The script needs a punchier opening.",
             "corrections": "Punch up the opening line.",
         }
         assert result["iterations"] == 1
@@ -79,10 +87,14 @@ class TestCriticNode(BaseTestClass):
         """The draft script and persona fields are included in the prompt."""
 
         parsed = CriticAgentResponseFormat(
-            coherence_score=1.0,
-            grammar_score=1.0,
-            unambiguity_score=1.0,
+            mode_compliance_score=1.0,
+            fact_policy_score=1.0,
+            persona_fit_score=1.0,
+            language_score=1.0,
+            narrative_confidence_score=1.0,
             catchiness_score=1.0,
+            needs_revision=False,
+            diagnostic_reasoning="Passes all gates.",
             corrections="",
         )
         with patch("nodes.writer_critic_graph.critic_node.node.call_agent", return_value=parsed) as mock_call_agent:
@@ -93,6 +105,8 @@ class TestCriticNode(BaseTestClass):
         assert BASE_STATE["persona_language"] in prompt_text
         assert BASE_STATE["persona_style"] in prompt_text
         assert BASE_STATE["persona_tone"] in prompt_text
+        assert BASE_STATE["story_mode"] in prompt_text
+        assert BASE_STATE["article_content"] in prompt_text
 
     def test_no_structured_response(self, graph: StateGraph):
         """Fatal error when agent returns no structured_response."""

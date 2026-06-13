@@ -195,7 +195,10 @@ class TestNarratorNode(BaseTestClass):
             with (
                 patch(
                     "nodes.narrator_node.node.call_agent",
-                    return_value=NarratorAgentResponseFormat(narration=expected_narration),
+                    return_value=NarratorAgentResponseFormat(
+                        narration=expected_narration,
+                        diagnostic_reasoning="Preserved the source script.",
+                    ),
                 ),
             ):
                 result = graph.compile().invoke(

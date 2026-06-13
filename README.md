@@ -2,7 +2,7 @@
 
 ## Description
 
-Szponciciel is a multi-agent content pipeline that autonomously fetches real news, generates TikTok-style video scripts (with a configurable fact/satire ratio), evaluates them in a Writer ↔ Critic loop, and publishes the final videos across a pool of TikTok accounts — each with its own persona, voice, and language.
+Szponciciel is a multi-agent content pipeline that autonomously fetches real news, generates TikTok-style video scripts with a per-run story mode, evaluates them in a Writer ↔ Critic loop, and publishes the final videos across a pool of TikTok accounts — each with its own persona, voice, and language.
 
 The project is developed as a study project within the PIAT Jira space.
 
@@ -11,7 +11,7 @@ The project is developed as a study project within the PIAT Jira space.
 Build a fully automated, self-improving TikTok content factory that:
 
 - Discovers and ranks trending news articles
-- Generates persona-specific scripts blending factual and satirical content (`real_news_ratio`)
+- Generates persona-specific scripts using a `story_mode` sampled from each persona's `fictional_news_ratio`
 - Refines scripts iteratively until a quality threshold is met
 - Converts approved scripts into TikTok-ready videos (TTS narration + AI footage + captions)
 - Publishes to multiple TikTok accounts via Zernio
@@ -78,7 +78,6 @@ Copy `.env.example` to `.env` and fill in the values. The variables:
 | `GROUND_TRUTH_MEDIA_ACCOUNT_ID` | TikTok account ID assigned to the ground-truth persona during DB seeding | Yes (for seeding) | — |
 | `MEDIA_ROOT` | Media root directory for stock video assets | No | `media` |
 | `WRITER_CRITIC_MAX_ITERS` | Maximum writer↔critic loop iterations | No | `3` |
-| `SCRIPT_RELIABILITY_THRESHOLD` | Mean reliability score threshold to exit the writer↔critic loop early | No | `0.8` |
 | `MAX_SCRIPT_LENGTH` | Maximum character length for generated TikTok scripts | No | `8000` |
 
 ## Running the pipeline
@@ -133,7 +132,7 @@ Every run is then traced in LangSmith with no code changes. Each persona's pipel
          ▼
 ┌─────────────────┐
 │     Writer      │  Generates a script per account, parameterized by
-│   (Creator)     │  {persona, language, tone, real_news_ratio, voice}
+│   (Creator)     │  {persona, language, tone, fictional_news_ratio, voice}
 └────────┬────────┘
          │ draft script
          ▼
@@ -155,7 +154,7 @@ Every run is then traced in LangSmith with no code changes. Each persona's pipel
 │        Output & Distribution            │
 │  Upload via Zernio API                  │
 │  Attach run metadata {run_id, persona,  │
-│  real_news_ratio, content_tags, ...}    │
+│  fictional_news_ratio, story_mode, ...} │
 └─────────────────────────────────────────┘
                      │
                      ▼

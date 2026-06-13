@@ -4,30 +4,37 @@ from pydantic import BaseModel, Field
 class CriticAgentResponseFormat(BaseModel):
     """Expected output format from the critic agent."""
 
-    coherence_score: float = Field(
+    mode_compliance_score: float = Field(
         ge=0.0,
         le=1.0,
         description=(
-            "How coherent the script is between real and fabricated content. "
-            "Satirical or fictional elements must not contradict the factual ones "
-            "and must respect the persona's real_news_ratio."
+            "How well the script follows the requested story mode. For fictional_news, "
+            "penalize prediction, hypothetical, dream-scenario, or 'imagine if' framing."
         ),
     )
-    grammar_score: float = Field(
+    fact_policy_score: float = Field(
         ge=0.0,
         le=1.0,
         description=(
-            "Grammar and linguistic correctness in the declared persona language. "
-            "Penalize typos, malformed sentences, and unintended language mixing."
+            "For real_news, how well material claims are grounded in the source article. "
+            "For fictional_news, how well the script works as coherent fabricated news "
+            "without accidentally turning into speculation or source-summary."
         ),
     )
-    unambiguity_score: float = Field(
+    persona_fit_score: float = Field(
         ge=0.0,
         le=1.0,
-        description=(
-            "How unambiguous the script is. Penalize vague claims, hedging, or "
-            "phrasing that leaves the viewer in doubt about what is being said."
-        ),
+        description="How well the script matches the persona style and tone.",
+    )
+    language_score: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Grammar and linguistic correctness in the declared persona language.",
+    )
+    narrative_confidence_score: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="How confidently and unambiguously the script presents its story without unwanted hedging.",
     )
     catchiness_score: float = Field(
         ge=0.0,
@@ -35,6 +42,14 @@ class CriticAgentResponseFormat(BaseModel):
         description=(
             "How well the script works as short-form spoken content: hook strength, "
             "punchy delivery, pacing, and TikTok appropriateness."
+        ),
+    )
+    needs_revision: bool = Field(description="True when the writer should revise the draft before approval.")
+    diagnostic_reasoning: str = Field(
+        max_length=2_000,
+        description=(
+            "Brief diagnostic rationale explaining the scores and why revision is or is "
+            "not needed. This is for debugging, not hidden reasoning."
         ),
     )
     corrections: str = Field(

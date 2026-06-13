@@ -38,12 +38,13 @@ Article content:
 Language: {state["persona_language"]}
 Style: {state["persona_style"]}
 Tone: {state["persona_tone"]}
-Real news ratio: {state["real_news_ratio"]}"""
+Story mode: {state["story_mode"]}"""
 
     if state["review"] and state["review"]["corrections"]:
         prompt += (
             f"\n\nIncorporate the following corrections from the previous draft:\n{state['review']['corrections']}"
         )
+        prompt += f"\n\nPrevious critic diagnostic rationale:\n{state['review']['diagnostic_reasoning']}"
         prompt += f"\n\nPrevious draft script:\n{state['draft_script']}"
 
     script = _truncate_script(

@@ -14,6 +14,6 @@ class Persona(SQLModel, table=True):
     voice_speaker: str | None = None
     voice_speaker_wav: str | None = None  # path to .wav for voice cloning
     show_captions: bool = True
-    real_news_ratio: float = 0.5
+    fictional_news_ratio: float = 0.5
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
