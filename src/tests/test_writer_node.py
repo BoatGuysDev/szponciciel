@@ -9,7 +9,8 @@ from nodes.writer_critic_graph.state import WriterCriticState
 from nodes.writer_critic_graph.writer_node.node import writer_node
 from nodes.writer_critic_graph.writer_node.response_format import WriterAgentResponseFormat
 from tests.base_test_class import BaseTestClass
-from utils.agent_utils import LLM_RETRY, AgentResponseError
+from tests.retry_policy import FAST_LLM_RETRY
+from utils.agent_utils import AgentResponseError
 from utils.graph_utils import build_error_handler
 
 log = get_logger(__name__)
@@ -42,7 +43,7 @@ class TestWriterNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=WriterCriticState)
-        graph.add_node(writer_node, retry_policy=LLM_RETRY, error_handler=_writer_error_handler)
+        graph.add_node(writer_node, retry_policy=FAST_LLM_RETRY, error_handler=_writer_error_handler)
         graph.add_edge(START, "writer_node")
         graph.add_edge("writer_node", END)
         return graph

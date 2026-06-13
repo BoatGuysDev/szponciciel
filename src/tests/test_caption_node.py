@@ -10,7 +10,8 @@ from models import Persona
 from nodes import PersonaRunState, caption_node
 from nodes.caption_node.response_format import CaptionAgentResponseFormat
 from tests.base_test_class import BaseTestClass
-from utils.agent_utils import LLM_RETRY, AgentResponseError
+from tests.retry_policy import FAST_LLM_RETRY
+from utils.agent_utils import AgentResponseError
 from utils.graph_utils import build_error_handler
 
 log = get_logger(__name__)
@@ -28,7 +29,7 @@ class TestCaptionNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=PersonaRunState)
-        graph.add_node(caption_node, retry_policy=LLM_RETRY, error_handler=_caption_error_handler)
+        graph.add_node(caption_node, retry_policy=FAST_LLM_RETRY, error_handler=_caption_error_handler)
         graph.add_edge(START, "caption_node")
         graph.add_edge("caption_node", END)
 

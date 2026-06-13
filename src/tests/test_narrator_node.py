@@ -10,7 +10,8 @@ from models import Persona, Run
 from nodes import PersonaRunState, narrator_node
 from nodes.narrator_node.response_format import NarratorAgentResponseFormat
 from tests.base_test_class import BaseTestClass
-from utils.agent_utils import LLM_RETRY, AgentResponseError
+from tests.retry_policy import FAST_LLM_RETRY
+from utils.agent_utils import AgentResponseError
 from utils.graph_utils import build_error_handler
 
 log = get_logger(__name__)
@@ -28,7 +29,7 @@ class TestNarratorNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=PersonaRunState)
-        graph.add_node(narrator_node, retry_policy=LLM_RETRY, error_handler=_narrator_error_handler)
+        graph.add_node(narrator_node, retry_policy=FAST_LLM_RETRY, error_handler=_narrator_error_handler)
         graph.add_edge(START, "narrator_node")
         graph.add_edge("narrator_node", END)
 
