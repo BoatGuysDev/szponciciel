@@ -5,10 +5,21 @@ from langgraph.graph import END, START, StateGraph
 from sqlalchemy import Engine
 from sqlmodel import Session
 
+from logging_config import get_logger
 from models import Persona, Run
 from orchestrator.intake_node import intake_node
 from orchestrator.state import OrchestratorState
 from tests.base_test_class import BaseTestClass
+from utils.agent_utils import LLM_RETRY
+from utils.graph_utils import build_error_handler
+
+log = get_logger(__name__)
+_intake_error_handler = build_error_handler(
+    log,
+    "intake.failed",
+    "Intake failed",
+    context_keys=("run_id",),
+)
 
 
 def _seed_persona(engine: Engine, persona_id: str, is_active: bool) -> None:
@@ -30,7 +41,7 @@ class TestIntakeNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=OrchestratorState)
-        graph.add_node(intake_node)
+        graph.add_node(intake_node, retry_policy=LLM_RETRY, error_handler=_intake_error_handler)
         graph.add_edge(START, "intake_node")
         graph.add_edge("intake_node", END)
         return graph
@@ -79,4 +90,4 @@ class TestIntakeNode(BaseTestClass):
             result = graph.compile().invoke({"prompt": "post about X"})
 
         assert result["is_fatal_error"] is True
-        assert "Topic extraction failed" in result["error_message"]
+        assert result["error_message"] == "Intake failed: RuntimeError: LLM down"

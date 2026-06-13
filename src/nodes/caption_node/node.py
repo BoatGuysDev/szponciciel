@@ -1,18 +1,14 @@
 from typing import TypedDict
 
-from langchain.agents import create_agent
-from langchain_google_genai import ChatGoogleGenerativeAI
 from sqlmodel import Session, select
 
-from config import settings
 from db import get_engine
 from logging_config import get_logger
 from models import Persona
 from nodes.caption_node.response_format import CaptionAgentResponseFormat
 from nodes.caption_node.system_prompt import CAPTION_SYSTEM_PROMPT
 from nodes.state import PersonaRunState
-from nodes.utils import AgentResponseError, invoke_agent_response
-from utils.logging import describe_exception, log_exception
+from utils.agent_utils import call_agent
 
 log = get_logger(__name__)
 CAPTION_MAX_CHARS = 2200
@@ -62,32 +58,13 @@ def caption_node(state: PersonaRunState) -> CaptionResult:
         result["error_message"] = "Missing required information to create caption."
         return result
 
-    try:
-        agent = create_agent(
-            model=ChatGoogleGenerativeAI(model=settings.llm_model),
-            system_prompt=CAPTION_SYSTEM_PROMPT,
-            response_format=CaptionAgentResponseFormat,
-        )
-
-        prompt = f"""
+    prompt = f"""
         Create a TikTok post caption for the following narration: {state["narration"]}
 
         The caption must be in {persona.language} and match the following style and tone: {persona.style}, {persona.tone}.
     """
 
-        response = invoke_agent_response(agent, prompt)
-    except AgentResponseError as exc:
-        log_exception(log, "caption.agent_failed", exc, persona_id=state["persona_id"])
-        result["is_fatal_error"] = True
-        result["error_message"] = f"Caption agent failed: {describe_exception(exc)}"
-        return result
-
-    parsed_output = response.get("structured_response")
-    if parsed_output is None:
-        log.warning("caption.no_structured_response")
-        result["is_fatal_error"] = True
-        result["error_message"] = "Failed to parse agent response."
-        return result
+    parsed_output = call_agent(CAPTION_SYSTEM_PROMPT, CaptionAgentResponseFormat, prompt=prompt)
 
     result["tiktok_caption"] = _truncate_caption(parsed_output.caption)
     result["hashtags"] = parsed_output.hashtags

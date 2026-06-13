@@ -4,11 +4,19 @@ from typing_extensions import TypedDict
 
 from config import settings
 from db import get_engine
+from logging_config import get_logger
 from models import Persona, Run
 from nodes.state import PersonaRunState
 from nodes.writer_critic_graph.critic_node.node import critic_node
 from nodes.writer_critic_graph.state import Review, WriterCriticState
 from nodes.writer_critic_graph.writer_node.node import writer_node
+from utils.agent_utils import LLM_RETRY
+from utils.graph_utils import build_error_handler
+
+log = get_logger(__name__)
+
+_writer_error_handler = build_error_handler(log, "writer.failed", "Writer failed", context_keys=("article_url",))
+_critic_error_handler = build_error_handler(log, "critic.failed", "Critic failed", context_keys=("article_url",))
 
 
 class WriterCriticResult(TypedDict, total=False):
@@ -41,8 +49,8 @@ def _critic_router(state: WriterCriticState) -> str:
 def _build_graph():
     graph_builder = StateGraph(WriterCriticState)
 
-    graph_builder.add_node(writer_node)
-    graph_builder.add_node(critic_node)
+    graph_builder.add_node(writer_node, retry_policy=LLM_RETRY, error_handler=_writer_error_handler)
+    graph_builder.add_node(critic_node, retry_policy=LLM_RETRY, error_handler=_critic_error_handler)
 
     graph_builder.add_edge(START, "writer_node")
     graph_builder.add_conditional_edges("writer_node", _writer_router)

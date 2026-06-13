@@ -1,14 +1,25 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from langgraph.graph import END, START, StateGraph
 from sqlalchemy import Engine
 from sqlmodel import Session
 
+from logging_config import get_logger
 from models import Persona
 from nodes import PersonaRunState, caption_node
 from nodes.caption_node.response_format import CaptionAgentResponseFormat
 from tests.base_test_class import BaseTestClass
+from utils.agent_utils import LLM_RETRY, AgentResponseError
+from utils.graph_utils import build_error_handler
+
+log = get_logger(__name__)
+_caption_error_handler = build_error_handler(
+    log,
+    "caption.failed",
+    "Caption generation failed",
+    context_keys=("persona_id",),
+)
 
 
 class TestCaptionNode(BaseTestClass):
@@ -17,7 +28,7 @@ class TestCaptionNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=PersonaRunState)
-        graph.add_node(caption_node)
+        graph.add_node(caption_node, retry_policy=LLM_RETRY, error_handler=_caption_error_handler)
         graph.add_edge(START, "caption_node")
         graph.add_edge("caption_node", END)
 
@@ -33,13 +44,6 @@ class TestCaptionNode(BaseTestClass):
         }
         defaults.update(kwargs)
         return Persona(**defaults)
-
-    def _mock_agent(self, caption: str, hashtags: list[str]) -> MagicMock:
-        mock = MagicMock()
-        mock.invoke.return_value = {
-            "structured_response": CaptionAgentResponseFormat(caption=caption, hashtags=hashtags)
-        }
-        return mock
 
     def test_missing_persona(self, graph: StateGraph):
         """Fatal error when persona is not in DB."""
@@ -105,36 +109,34 @@ class TestCaptionNode(BaseTestClass):
     def test_no_structured_response(self, graph: StateGraph, engine: Engine):
         """Fatal error when agent returns no structured_response."""
 
-        mock_agent = MagicMock()
-        mock_agent.invoke.return_value = {}
-
         with Session(engine) as session:
             session.add(self._make_persona())
             session.commit()
 
-            with (
-                patch("nodes.caption_node.node.ChatGoogleGenerativeAI"),
-                patch("nodes.caption_node.node.create_agent", return_value=mock_agent),
+            with patch(
+                "nodes.caption_node.node.call_agent",
+                side_effect=AgentResponseError("Agent response did not include structured_response."),
             ):
                 result = graph.compile().invoke({"persona_id": "1", "narration": "Some narration text."})
 
         assert result["is_fatal_error"]
-        assert result["error_message"] == "Failed to parse agent response."
+        assert (
+            result["error_message"]
+            == "Caption generation failed: AgentResponseError: Agent response did not include structured_response."
+        )
 
     def test_successful_caption_structured(self, graph: StateGraph, engine: Engine):
         """Mocked LLM returns valid structured response; result contains tiktok_caption and hashtags."""
 
         expected_caption = "Breaking news just dropped."
         expected_hashtags = ["#news", "#breaking", "#today", "#viral", "#trending"]
-        mock_agent = self._mock_agent(expected_caption, expected_hashtags)
-
         with Session(engine) as session:
             session.add(self._make_persona())
             session.commit()
 
-            with (
-                patch("nodes.caption_node.node.ChatGoogleGenerativeAI"),
-                patch("nodes.caption_node.node.create_agent", return_value=mock_agent),
+            with patch(
+                "nodes.caption_node.node.call_agent",
+                return_value=CaptionAgentResponseFormat(caption=expected_caption, hashtags=expected_hashtags),
             ):
                 result = graph.compile().invoke({"persona_id": "1", "narration": "Some narration text."})
 
@@ -147,15 +149,13 @@ class TestCaptionNode(BaseTestClass):
         """Caption longer than 2200 chars is truncated to 2200."""
 
         long_caption = "x" * 3000
-        mock_agent = self._mock_agent(long_caption, ["#news"] * 5)
-
         with Session(engine) as session:
             session.add(self._make_persona())
             session.commit()
 
-            with (
-                patch("nodes.caption_node.node.ChatGoogleGenerativeAI"),
-                patch("nodes.caption_node.node.create_agent", return_value=mock_agent),
+            with patch(
+                "nodes.caption_node.node.call_agent",
+                return_value=CaptionAgentResponseFormat(caption=long_caption, hashtags=["#news"] * 5),
             ):
                 result = graph.compile().invoke({"persona_id": "1", "narration": "Some narration text."})
 

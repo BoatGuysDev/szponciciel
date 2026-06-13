@@ -2,11 +2,32 @@ from langgraph.graph import END, START, StateGraph
 from sqlmodel import Session, select
 
 from db import get_engine
+from logging_config import get_logger
 from models import Persona
 from nodes.state import PersonaRunState
 from nodes.video_assembly_graph.align_node.node import align_node
 from nodes.video_assembly_graph.compose_node.node import compose_node
 from nodes.video_assembly_graph.compose_node.simple_node import compose_simple_node
+from utils.agent_utils import LLM_RETRY
+from utils.graph_utils import build_error_handler
+
+log = get_logger(__name__)
+
+_align_error_handler = build_error_handler(
+    log, "alignment.failed", "WhisperX alignment failed", context_keys=("audio_path",)
+)
+_compose_error_handler = build_error_handler(
+    log,
+    "compose.failed",
+    "Video composition failed",
+    context_keys=("background_video_path", "audio_path"),
+)
+_simple_compose_error_handler = build_error_handler(
+    log,
+    "simple_compose.failed",
+    "Simple composition failed",
+    context_keys=("background_video_path", "audio_path"),
+)
 
 
 def _router(state: PersonaRunState) -> str:
@@ -21,9 +42,13 @@ def _router(state: PersonaRunState) -> str:
 def video_assembly_graph():
     graph = StateGraph(state_schema=PersonaRunState)
 
-    graph.add_node(align_node)
-    graph.add_node(compose_node)
-    graph.add_node(compose_simple_node)
+    graph.add_node(align_node, retry_policy=LLM_RETRY, error_handler=_align_error_handler)
+    graph.add_node(compose_node, retry_policy=LLM_RETRY, error_handler=_compose_error_handler)
+    graph.add_node(
+        compose_simple_node,
+        retry_policy=LLM_RETRY,
+        error_handler=_simple_compose_error_handler,
+    )
 
     graph.add_conditional_edges(START, _router)
     graph.add_edge("compose_simple_node", END)

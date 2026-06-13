@@ -5,12 +5,23 @@ from langgraph.graph import END, START, StateGraph
 from sqlalchemy import Engine
 from sqlmodel import Session
 
+from logging_config import get_logger
 from models import Run
 from nodes.researcher_node import node as researcher_module
 from nodes.researcher_node import tools as tools_module
 from nodes.researcher_node.node import researcher_node
 from nodes.state import PersonaRunState
 from tests.base_test_class import BaseTestClass
+from utils.agent_utils import LLM_RETRY
+from utils.graph_utils import build_error_handler
+
+log = get_logger(__name__)
+_research_error_handler = build_error_handler(
+    log,
+    "research.failed",
+    "Research failed",
+    context_keys=("run_id",),
+)
 
 
 def _mock_tavily(articles: list[dict]):
@@ -37,7 +48,7 @@ class TestResearcherNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=PersonaRunState)
-        graph.add_node(researcher_node)
+        graph.add_node(researcher_node, retry_policy=LLM_RETRY, error_handler=_research_error_handler)
         graph.add_edge(START, "researcher_node")
         graph.add_edge("researcher_node", END)
         return graph
@@ -183,7 +194,7 @@ class TestResearcherNode(BaseTestClass):
             result = graph.compile().invoke({"run_id": run_id})
 
         assert result["is_fatal_error"] is True
-        assert "Scoring error" in result["error_message"]
+        assert result["error_message"] == "Research failed: RuntimeError: LLM down"
 
     def test_topic_searches_single_query_not_categories(self):
         captured: list[str] = []

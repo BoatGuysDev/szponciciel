@@ -1,19 +1,13 @@
 from typing import TypedDict
 
-from langchain.agents import create_agent
-from langchain_google_genai import ChatGoogleGenerativeAI
 from sqlmodel import Session, select
 
-from config import settings
 from db import get_engine
-from logging_config import get_logger
 from models import Persona, Run
+from nodes.narrator_node.response_format import NarratorAgentResponseFormat
 from nodes.narrator_node.system_prompt import NARRATOR_SYSTEM_PROMPT
 from nodes.state import PersonaRunState
-from nodes.utils import AgentResponseError, invoke_agent
-from utils.logging import describe_exception, log_exception
-
-log = get_logger(__name__)
+from utils.agent_utils import call_agent
 
 
 class NarratorResult(TypedDict, total=False):
@@ -47,25 +41,13 @@ def narrator_node(state: PersonaRunState) -> NarratorResult:
             "error_message": "Missing required information to create narration.",
         }
 
-    agent = create_agent(
-        model=ChatGoogleGenerativeAI(model=settings.llm_model),
-        system_prompt=NARRATOR_SYSTEM_PROMPT,
-    )
-
     prompt = f"""
         Create a narration for the following script: {base_script}
 
         The narration must be in {persona.language} and match the following style and tone: {persona.style}, {persona.tone}.
     """
 
-    try:
-        narration = invoke_agent(agent, prompt)
-    except AgentResponseError as exc:
-        log_exception(log, "narrator.agent_failed", exc, run_id=state["run_id"], persona_id=state["persona_id"])
-        return {
-            "is_fatal_error": True,
-            "error_message": f"Narration generation failed: {describe_exception(exc)}",
-        }
+    narration = call_agent(NARRATOR_SYSTEM_PROMPT, NarratorAgentResponseFormat, prompt=prompt).narration
 
     return {
         "narration": narration,

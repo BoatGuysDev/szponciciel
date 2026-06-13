@@ -1,14 +1,25 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from langgraph.graph import END, START, StateGraph
 
+from logging_config import get_logger
 from nodes.writer_critic_graph.critic_node.node import critic_node
 from nodes.writer_critic_graph.critic_node.response_format import (
     CriticAgentResponseFormat,
 )
 from nodes.writer_critic_graph.state import WriterCriticState
 from tests.base_test_class import BaseTestClass
+from utils.agent_utils import LLM_RETRY, AgentResponseError
+from utils.graph_utils import build_error_handler
+
+log = get_logger(__name__)
+_critic_error_handler = build_error_handler(
+    log,
+    "critic.failed",
+    "Critic failed",
+    context_keys=("article_url",),
+)
 
 BASE_STATE: WriterCriticState = {
     "article_url": "https://example.com/article",
@@ -31,15 +42,10 @@ class TestCriticNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=WriterCriticState)
-        graph.add_node(critic_node)
+        graph.add_node(critic_node, retry_policy=LLM_RETRY, error_handler=_critic_error_handler)
         graph.add_edge(START, "critic_node")
         graph.add_edge("critic_node", END)
         return graph
-
-    def _mock_agent(self, parsed: CriticAgentResponseFormat | None) -> MagicMock:
-        mock = MagicMock()
-        mock.invoke.return_value = {"structured_response": parsed} if parsed is not None else {}
-        return mock
 
     def test_successful_review(self, graph: StateGraph):
         """Reliability score is the mean of the four sub-scores; iterations increments."""
@@ -51,14 +57,9 @@ class TestCriticNode(BaseTestClass):
             catchiness_score=0.4,
             corrections="Punch up the opening line.",
         )
-        mock_agent = self._mock_agent(parsed)
-
-        with (
-            patch("nodes.writer_critic_graph.critic_node.node.ChatGoogleGenerativeAI"),
-            patch(
-                "nodes.writer_critic_graph.critic_node.node.create_agent",
-                return_value=mock_agent,
-            ),
+        with patch(
+            "nodes.writer_critic_graph.critic_node.node.call_agent",
+            return_value=parsed,
         ):
             result = graph.compile().invoke(BASE_STATE)
 
@@ -82,18 +83,10 @@ class TestCriticNode(BaseTestClass):
             catchiness_score=1.0,
             corrections="",
         )
-        mock_agent = self._mock_agent(parsed)
-
-        with (
-            patch("nodes.writer_critic_graph.critic_node.node.ChatGoogleGenerativeAI"),
-            patch(
-                "nodes.writer_critic_graph.critic_node.node.create_agent",
-                return_value=mock_agent,
-            ),
-        ):
+        with patch("nodes.writer_critic_graph.critic_node.node.call_agent", return_value=parsed) as mock_call_agent:
             graph.compile().invoke(BASE_STATE)
 
-        prompt_text = mock_agent.invoke.call_args[0][0]["messages"][0].content
+        prompt_text = mock_call_agent.call_args.kwargs["prompt"]
         assert BASE_STATE["draft_script"] in prompt_text
         assert BASE_STATE["persona_language"] in prompt_text
         assert BASE_STATE["persona_style"] in prompt_text
@@ -102,34 +95,25 @@ class TestCriticNode(BaseTestClass):
     def test_no_structured_response(self, graph: StateGraph):
         """Fatal error when agent returns no structured_response."""
 
-        mock_agent = self._mock_agent(None)
-
-        with (
-            patch("nodes.writer_critic_graph.critic_node.node.ChatGoogleGenerativeAI"),
-            patch(
-                "nodes.writer_critic_graph.critic_node.node.create_agent",
-                return_value=mock_agent,
-            ),
+        with patch(
+            "nodes.writer_critic_graph.critic_node.node.call_agent",
+            side_effect=AgentResponseError("Agent response did not include structured_response."),
         ):
             result = graph.compile().invoke(BASE_STATE)
 
         assert result["is_fatal_error"]
-        assert result["error_message"] == "Failed to parse critic response."
+        assert result["error_message"] == (
+            "Critic failed: AgentResponseError: Agent response did not include structured_response."
+        )
 
     def test_agent_failure_returns_fatal_error(self, graph: StateGraph):
         """An exception from the LLM agent results in a fatal error state."""
 
-        mock_agent = MagicMock()
-        mock_agent.invoke.side_effect = RuntimeError("LLM unavailable")
-
-        with (
-            patch("nodes.writer_critic_graph.critic_node.node.ChatGoogleGenerativeAI"),
-            patch(
-                "nodes.writer_critic_graph.critic_node.node.create_agent",
-                return_value=mock_agent,
-            ),
+        with patch(
+            "nodes.writer_critic_graph.critic_node.node.call_agent",
+            side_effect=RuntimeError("LLM unavailable"),
         ):
             result = graph.compile().invoke(BASE_STATE)
 
         assert result["is_fatal_error"]
-        assert "Critic agent failed" in result["error_message"]
+        assert result["error_message"] == "Critic failed: RuntimeError: LLM unavailable"

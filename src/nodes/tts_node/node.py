@@ -5,12 +5,9 @@ from TTS.api import TTS
 
 from config import settings
 from db import get_engine
-from logging_config import get_logger
 from models import Persona
 from nodes.state import PersonaRunState, persona_run_dir
-from utils.logging import describe_exception, log_exception
 
-log = get_logger(__name__)
 _tts: TTS | None = None
 
 
@@ -52,19 +49,12 @@ def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
         )  # If None, the TTS model will choose a default speaker for the language
 
     global _tts
-    try:
-        if _tts is None:
-            _tts = TTS(
-                model_name=settings.tts_model,
-                progress_bar=True,
-            ).to(settings.compute_device)
-        _tts.tts_to_file(**kwargs)
-    except Exception as exc:
-        log_exception(log, "tts.generation_failed", exc, run_id=state["run_id"], persona_id=state["persona_id"])
-        return {
-            "is_fatal_error": True,
-            "error_message": f"Error during TTS generation: {describe_exception(exc)}",
-        }
+    if _tts is None:
+        _tts = TTS(
+            model_name=settings.tts_model,
+            progress_bar=True,
+        ).to(settings.compute_device)
+    _tts.tts_to_file(**kwargs)
 
     return {
         "audio_path": str(out_path),

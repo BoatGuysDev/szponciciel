@@ -4,16 +4,27 @@ from unittest.mock import MagicMock, patch
 import pytest
 from langgraph.graph import END, START, StateGraph
 
+from logging_config import get_logger
 from nodes import PersonaRunState
 from nodes.video_assembly_graph.compose_node.simple_node import compose_simple_node
 from tests.base_test_class import BaseTestClass
+from utils.agent_utils import LLM_RETRY
+from utils.graph_utils import build_error_handler
+
+log = get_logger(__name__)
+_simple_compose_error_handler = build_error_handler(
+    log,
+    "simple_compose.failed",
+    "Simple composition failed",
+    context_keys=("background_video_path", "audio_path"),
+)
 
 
 class TestComposeSimpleNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=PersonaRunState)
-        graph.add_node(compose_simple_node)
+        graph.add_node(compose_simple_node, retry_policy=LLM_RETRY, error_handler=_simple_compose_error_handler)
         graph.add_edge(START, "compose_simple_node")
         graph.add_edge("compose_simple_node", END)
         return graph
@@ -78,4 +89,4 @@ class TestComposeSimpleNode(BaseTestClass):
         result = graph.compile().invoke(self._base_state())
 
         assert result["is_fatal_error"]
-        assert "Simple composition failed" in result["error_message"]
+        assert result["error_message"] == "Simple composition failed: RuntimeError: codec not found"

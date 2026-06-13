@@ -11,6 +11,10 @@ uv run alembic upgrade head
 uv run python -m db.seed
 ```
 
+## Code Style
+
+Always run `ruff format` on modified Python files before returning code changes to the user.
+
 ## Architecture
 
 Szponciciel is a multi-agent LangGraph pipeline that autonomously generates and publishes TikTok news videos. The pipeline is: **News Fetcher → Writer ↔ Critic loop → Narrator → TTS → Video Assembly → Zernio upload**.
@@ -31,6 +35,10 @@ The `src/nodes/` folder also contains subgraph nodes (`writer_critic_graph`, `vi
 ### Logging
 
 Prefer `utils.logging.log_exception(...)` at every handled exception site so tracebacks and structured context reach the console and JSONL log file. Keep user-facing error messages explicit by including the exception type, for example `KeyError: 'tiktok_account_id'`, instead of only `str(exc)`. Use `log.exception(...)` as the fallback at entrypoints for uncaught failures.
+
+### Agent calls
+
+Use `utils.agent_utils.call_agent(...)` for LLM invocations instead of open-coded `create_agent(...)` / `invoke_agent_response(...)` boilerplate. Keep nodes on the happy path, and let graph-level `retry_policy=LLM_RETRY` plus `error_handler=...` handle retryable agent failures and logging.
 
 ### Video providers
 

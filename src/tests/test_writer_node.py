@@ -1,12 +1,24 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from langgraph.graph import END, START, StateGraph
 
 from config import settings
+from logging_config import get_logger
 from nodes.writer_critic_graph.state import WriterCriticState
 from nodes.writer_critic_graph.writer_node.node import writer_node
+from nodes.writer_critic_graph.writer_node.response_format import WriterAgentResponseFormat
 from tests.base_test_class import BaseTestClass
+from utils.agent_utils import LLM_RETRY, AgentResponseError
+from utils.graph_utils import build_error_handler
+
+log = get_logger(__name__)
+_writer_error_handler = build_error_handler(
+    log,
+    "writer.failed",
+    "Writer failed",
+    context_keys=("article_url",),
+)
 
 BASE_STATE: WriterCriticState = {
     "article_url": "https://example.com/article",
@@ -29,28 +41,19 @@ class TestWriterNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=WriterCriticState)
-        graph.add_node(writer_node)
+        graph.add_node(writer_node, retry_policy=LLM_RETRY, error_handler=_writer_error_handler)
         graph.add_edge(START, "writer_node")
         graph.add_edge("writer_node", END)
         return graph
-
-    def _mock_agent(self, content: str) -> MagicMock:
-        mock_agent = MagicMock()
-        mock_agent.invoke.return_value = {"messages": [MagicMock(content=content)]}
-
-        return mock_agent
 
     def test_successful_first_iteration(self, graph: StateGraph):
         """Script is set and iterations increments to 1 on a clean first pass."""
 
         expected_script = "Breaking news! This is huge."
-        mock_agent = self._mock_agent(expected_script)
-
         with (
-            patch("nodes.writer_critic_graph.writer_node.node.ChatGoogleGenerativeAI"),
             patch(
-                "nodes.writer_critic_graph.writer_node.node.create_agent",
-                return_value=mock_agent,
+                "nodes.writer_critic_graph.writer_node.node.call_agent",
+                return_value=WriterAgentResponseFormat(draft_script=expected_script),
             ),
         ):
             result = graph.compile().invoke(BASE_STATE)
@@ -75,19 +78,13 @@ class TestWriterNode(BaseTestClass):
             },
             "iterations": 1,
         }
-        mock_agent = self._mock_agent("Revised script here.")
-
-        with (
-            patch("nodes.writer_critic_graph.writer_node.node.ChatGoogleGenerativeAI"),
-            patch(
-                "nodes.writer_critic_graph.writer_node.node.create_agent",
-                return_value=mock_agent,
-            ),
-        ):
+        with patch(
+            "nodes.writer_critic_graph.writer_node.node.call_agent",
+            return_value=WriterAgentResponseFormat(draft_script="Revised script here."),
+        ) as mock_call_agent:
             graph.compile().invoke(state)
 
-        call_args = mock_agent.invoke.call_args
-        prompt_text = call_args[0][0]["messages"][0].content
+        prompt_text = mock_call_agent.call_args.kwargs["prompt"]
         assert draft_script in prompt_text
         assert corrections in prompt_text
 
@@ -95,13 +92,10 @@ class TestWriterNode(BaseTestClass):
         """Output longer than max_script_length is truncated."""
 
         long_content = "x" * (settings.max_script_length + 1000)
-        mock_agent = self._mock_agent(long_content)
-
         with (
-            patch("nodes.writer_critic_graph.writer_node.node.ChatGoogleGenerativeAI"),
             patch(
-                "nodes.writer_critic_graph.writer_node.node.create_agent",
-                return_value=mock_agent,
+                "nodes.writer_critic_graph.writer_node.node.call_agent",
+                return_value=WriterAgentResponseFormat(draft_script=long_content),
             ),
         ):
             result = graph.compile().invoke(BASE_STATE)
@@ -112,17 +106,15 @@ class TestWriterNode(BaseTestClass):
     def test_agent_failure_returns_fatal_error(self, graph: StateGraph):
         """An exception from the LLM agent results in a fatal error state."""
 
-        mock_agent = self._mock_agent("This content won't be used.")
-        mock_agent.invoke.side_effect = RuntimeError("LLM unavailable")
-
         with (
-            patch("nodes.writer_critic_graph.writer_node.node.ChatGoogleGenerativeAI"),
             patch(
-                "nodes.writer_critic_graph.writer_node.node.create_agent",
-                return_value=mock_agent,
+                "nodes.writer_critic_graph.writer_node.node.call_agent",
+                side_effect=AgentResponseError("Agent response did not include structured_response."),
             ),
         ):
             result = graph.compile().invoke(BASE_STATE)
 
         assert result["is_fatal_error"]
-        assert "Writer agent failed" in result["error_message"]
+        assert result["error_message"] == (
+            "Writer failed: AgentResponseError: Agent response did not include structured_response."
+        )

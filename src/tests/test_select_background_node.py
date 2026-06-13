@@ -4,17 +4,27 @@ from unittest.mock import MagicMock, patch
 import pytest
 from langgraph.graph import END, START, StateGraph
 
+from logging_config import get_logger
 from nodes.select_background_node.node import select_background_node
 from nodes.state import PersonaRunState
 from providers.stock_video_provider import VALID_CATEGORIES
 from tests.base_test_class import BaseTestClass
+from utils.agent_utils import LLM_RETRY
+from utils.graph_utils import build_error_handler
+
+log = get_logger(__name__)
+_background_error_handler = build_error_handler(
+    log,
+    "background.failed",
+    "Background selection failed",
+)
 
 
 class TestSelectBackgroundNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=PersonaRunState)
-        graph.add_node(select_background_node)
+        graph.add_node(select_background_node, retry_policy=LLM_RETRY, error_handler=_background_error_handler)
         graph.add_edge(START, "select_background_node")
         graph.add_edge("select_background_node", END)
         return graph
@@ -47,7 +57,7 @@ class TestSelectBackgroundNode(BaseTestClass):
             result = graph.compile().invoke({})
 
         assert result["is_fatal_error"] is True
-        assert "Background selection failed" in result["error_message"]
+        assert result["error_message"] == "Background selection failed: FileNotFoundError: no .mp4 files"
 
     def test_empty_categories_returns_fatal_error(self, graph: StateGraph):
         provider = MagicMock()

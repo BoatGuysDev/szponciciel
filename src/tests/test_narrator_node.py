@@ -1,13 +1,25 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from langgraph.graph import END, START, StateGraph
 from sqlalchemy import Engine
 from sqlmodel import Session
 
+from logging_config import get_logger
 from models import Persona, Run
 from nodes import PersonaRunState, narrator_node
+from nodes.narrator_node.response_format import NarratorAgentResponseFormat
 from tests.base_test_class import BaseTestClass
+from utils.agent_utils import LLM_RETRY, AgentResponseError
+from utils.graph_utils import build_error_handler
+
+log = get_logger(__name__)
+_narrator_error_handler = build_error_handler(
+    log,
+    "narrator.failed",
+    "Narration generation failed",
+    context_keys=("run_id", "persona_id"),
+)
 
 
 class TestNarratorNode(BaseTestClass):
@@ -16,7 +28,7 @@ class TestNarratorNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=PersonaRunState)
-        graph.add_node(narrator_node)
+        graph.add_node(narrator_node, retry_policy=LLM_RETRY, error_handler=_narrator_error_handler)
         graph.add_edge(START, "narrator_node")
         graph.add_edge("narrator_node", END)
 
@@ -165,9 +177,6 @@ class TestNarratorNode(BaseTestClass):
 
         expected_narration = "This is the generated narration."
 
-        mock_agent = MagicMock()
-        mock_agent.invoke.return_value = {"messages": [MagicMock(content=expected_narration)]}
-
         with Session(engine) as session:
             run = Run(status="pending", base_script="This is a test script.")
             persona = Persona(
@@ -183,8 +192,10 @@ class TestNarratorNode(BaseTestClass):
             session.commit()
 
             with (
-                patch("nodes.narrator_node.node.ChatGoogleGenerativeAI"),
-                patch("nodes.narrator_node.node.create_agent", return_value=mock_agent),
+                patch(
+                    "nodes.narrator_node.node.call_agent",
+                    return_value=NarratorAgentResponseFormat(narration=expected_narration),
+                ),
             ):
                 result = graph.compile().invoke(
                     {
@@ -196,3 +207,34 @@ class TestNarratorNode(BaseTestClass):
         assert result.get("is_fatal_error", None) is None
         assert result.get("error_message", None) is None
         assert result["narration"] == expected_narration
+
+    def test_agent_failure_returns_fatal_error(self, graph: StateGraph, engine: Engine):
+        with Session(engine) as session:
+            run = Run(status="pending", base_script="This is a test script.")
+            persona = Persona(
+                id="1",
+                tiktok_account_id="tiktok-news",
+                language="English",
+                style="dramatic",
+                tone="serious",
+            )
+
+            session.add(run)
+            session.add(persona)
+            session.commit()
+
+            with patch(
+                "nodes.narrator_node.node.call_agent",
+                side_effect=AgentResponseError("Agent response did not include structured_response."),
+            ):
+                result = graph.compile().invoke(
+                    {
+                        "run_id": run.id,
+                        "persona_id": persona.id,
+                    }
+                )
+
+        assert result["is_fatal_error"]
+        assert result["error_message"] == (
+            "Narration generation failed: AgentResponseError: Agent response did not include structured_response."
+        )

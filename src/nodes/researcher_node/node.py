@@ -8,14 +8,10 @@ from sqlmodel import Session
 
 from config import settings
 from db import get_engine
-from logging_config import get_logger
 from models import Run
 from nodes.researcher_node.system_prompt import RESEARCHER_SYSTEM_PROMPT
 from nodes.researcher_node.tools import fetch_news_candidates
 from nodes.state import PersonaRunState
-from utils.logging import describe_exception, log_exception
-
-log = get_logger(__name__)
 
 
 class ResearcherResult(TypedDict, total=False):
@@ -60,30 +56,22 @@ def researcher_node(state: PersonaRunState) -> ResearcherResult:
     if not candidates:
         return {"is_fatal_error": True, "error_message": "No articles found"}
 
-    try:
-        scored = _score_with_llm(candidates)
-    except Exception as exc:
-        log_exception(log, "researcher.scoring_failed", exc, run_id=run_id, candidate_count=len(candidates))
-        return {"is_fatal_error": True, "error_message": f"Scoring error: {describe_exception(exc)}"}
+    scored = _score_with_llm(candidates)
 
     if not scored:
         return {"is_fatal_error": True, "error_message": "No scored articles"}
 
     best = max(scored, key=lambda c: c["virality_score"])
 
-    try:
-        with Session(get_engine()) as session:
-            run = session.get(Run, run_id)
-            if not run:
-                return {
-                    "is_fatal_error": True,
-                    "error_message": f"Run {run_id} not found",
-                }
-            run.source_article_url = best["url"]
-            run.source_article_title = best["title"]
-            session.commit()
-    except Exception as exc:
-        log_exception(log, "researcher.db_write_failed", exc, run_id=run_id, article_url=best["url"])
-        return {"is_fatal_error": True, "error_message": f"DB error: {describe_exception(exc)}"}
+    with Session(get_engine()) as session:
+        run = session.get(Run, run_id)
+        if not run:
+            return {
+                "is_fatal_error": True,
+                "error_message": f"Run {run_id} not found",
+            }
+        run.source_article_url = best["url"]
+        run.source_article_title = best["title"]
+        session.commit()
 
     return {}
