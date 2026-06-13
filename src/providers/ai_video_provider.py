@@ -15,6 +15,5 @@ class AIVideoProvider:
 
     def get_video(self, request: VideoRequest) -> Path:
         raise NotImplementedError(
-            "AIVideoProvider is not yet implemented. "
-            "Set video_strategy='stock' to use StockVideoProvider."
+            "AIVideoProvider is not yet implemented. Set video_strategy='stock' to use StockVideoProvider."
         )

@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 
 import pytest
-from sqlalchemy import Engine
 from langgraph.graph import StateGraph
+from sqlalchemy import Engine
 
 from db import get_engine, reset_db
 

@@ -1,13 +1,24 @@
-import pytest
 from unittest.mock import patch
-from langgraph.graph import StateGraph, START, END
+
+import pytest
+from langgraph.graph import END, START, StateGraph
 
 from config import settings
-from nodes.video_assembly_graph.transforms import Word
+from logging_config import get_logger
 from nodes import PersonaRunState
 from nodes.video_assembly_graph.align_node.node import align_node
-
+from nodes.video_assembly_graph.transforms import Word
 from tests.base_test_class import BaseTestClass
+from utils.agent_utils import LLM_RETRY
+from utils.graph_utils import build_error_handler
+
+log = get_logger(__name__)
+_align_error_handler = build_error_handler(
+    log,
+    "alignment.failed",
+    "WhisperX alignment failed",
+    context_keys=("audio_path",),
+)
 
 _MOCK_WORDS = [
     Word(text="Hello", start=0.0, end=0.5),
@@ -23,7 +34,7 @@ class TestAlignNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=PersonaRunState)
-        graph.add_node(align_node)
+        graph.add_node(align_node, retry_policy=LLM_RETRY, error_handler=_align_error_handler)
         graph.add_edge(START, "align_node")
         graph.add_edge("align_node", END)
         return graph
@@ -84,4 +95,4 @@ class TestAlignNode(BaseTestClass):
         )
 
         assert result["is_fatal_error"]
-        assert "WhisperX alignment failed" in result["error_message"]
+        assert result["error_message"] == "WhisperX alignment failed: RuntimeError: model load failed"

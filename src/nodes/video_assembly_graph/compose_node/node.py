@@ -1,9 +1,8 @@
 from pathlib import Path
 from typing import TypedDict
 
-from nodes.video_assembly_graph.transforms import Word, compose
-
 from nodes.state import PersonaRunState, persona_run_dir
+from nodes.video_assembly_graph.transforms import Word, compose
 
 
 class ComposeResult(TypedDict, total=False):
@@ -15,22 +14,13 @@ class ComposeResult(TypedDict, total=False):
 def compose_node(state: PersonaRunState) -> ComposeResult:
     out_path = persona_run_dir(state) / "output.mp4"
 
-    try:
-        words = [
-            Word(text=w["text"], start=w["start"], end=w["end"])
-            for w in state["word_timings"]
-        ]
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        compose(
-            Path(state["background_video_path"]),
-            Path(state["audio_path"]),
-            words,
-            out_path,
-        )
-    except Exception as e:
-        return {
-            "is_fatal_error": True,
-            "error_message": f"Video composition failed: {e}",
-        }
+    words = [Word(text=w["text"], start=w["start"], end=w["end"]) for w in state["word_timings"]]
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    compose(
+        Path(state["background_video_path"]),
+        Path(state["audio_path"]),
+        words,
+        out_path,
+    )
 
     return {"output_video_path": str(out_path)}

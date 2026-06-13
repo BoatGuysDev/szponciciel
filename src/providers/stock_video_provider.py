@@ -24,15 +24,9 @@ class StockVideoProvider:
 
     def get_video(self, request: VideoRequest) -> Path:
         if request.category not in VALID_CATEGORIES:
-            raise ValueError(
-                f"Invalid category: {request.category!r}. "
-                f"Valid categories: {sorted(VALID_CATEGORIES)}"
-            )
+            raise ValueError(f"Invalid category: {request.category!r}. Valid categories: {sorted(VALID_CATEGORIES)}")
         folder = self.root / request.category
         videos = list(folder.glob("*.mp4"))
         if not videos:
-            raise FileNotFoundError(
-                f"No .mp4 files found in {folder}. "
-                f"Run scripts/download_videos.py to populate it."
-            )
+            raise FileNotFoundError(f"No .mp4 files found in {folder}. Run scripts/download_videos.py to populate it.")
         return random.choice(videos)

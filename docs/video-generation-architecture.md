@@ -15,7 +15,7 @@ ParentGraph (LangGraph StateGraph, SQLite checkpointing)
 │
 └── production_subgraph  [sequential loop over active personas]
     For each persona:
-      ├── decide_content_type     (weighted random by real_news_ratio → "real"|"fake")
+      ├── decide_story_mode       (weighted random by fictional_news_ratio → "real_news"|"fictional_news")
       ├── choose_video_category   (LLM picks from 10 categories given article + persona stats)
       ├── narrator_node           (adapts script/article → persona style + language)
       ├── caption_node            (post caption + hashtags → TikTok text)
@@ -57,7 +57,7 @@ class PipelineState(TypedDict):
 class PersonaRunState(TypedDict):
     run_id: str
     persona_id: str
-    content_type: str                 # "real" | "fake"
+    story_mode: str                   # "real_news" | "fictional_news"
     narration: str
     tiktok_caption: str
     hashtags: list[str]
@@ -84,14 +84,15 @@ class Persona:
     voice_speaker: str                # Coqui built-in speaker name
     voice_speaker_wav: str | None     # path to reference wav for voice cloning
     show_captions: bool               # if False, skip WhisperX + overlay
-    real_news_ratio: float            # 0.0 = all fake, 1.0 = all real
+    fictional_news_ratio: float       # 0.0 = all real_news, 1.0 = all fictional_news
     is_active: bool
 ```
 
-### Real vs fake content decision
-Each persona run draws a weighted random choice based on `real_news_ratio` (coin-toss style,
-no historical correction). The pipeline always produces both an `approved_script` (fake) and a
-ranked `source_article` (real) — the persona sub-graph picks which to narrate.
+### Real vs fictional content decision
+Each persona run draws a weighted random choice based on `fictional_news_ratio` (coin-toss style,
+no historical correction). The selected `story_mode` is passed through generation so the writer,
+critic, narrator, and caption nodes handle the current run as either grounded `real_news` or
+confident in-universe `fictional_news`.
 
 **Narrator node input:** `run.base_script` + persona `style`, `tone`, `language`. The narrator
 adapts whatever script was produced — it does not distinguish between real and fake content.
@@ -156,7 +157,7 @@ CREATE TABLE personas (
     voice_speaker       TEXT,
     voice_speaker_wav   TEXT,           -- nullable, path to .wav for voice cloning
     show_captions       BOOLEAN DEFAULT TRUE,
-    real_news_ratio     REAL DEFAULT 0.5,
+    fictional_news_ratio REAL DEFAULT 0.5,
     is_active           BOOLEAN DEFAULT TRUE,
     created_at          TIMESTAMP
 );
@@ -178,7 +179,7 @@ CREATE TABLE persona_runs (
     run_id              TEXT REFERENCES runs(id),
     persona_id          TEXT REFERENCES personas(id),
     status              TEXT,               -- pending | running | completed | failed
-    content_type        TEXT,               -- "real" | "fake"
+    story_mode          TEXT,               -- "real_news" | "fictional_news"
     narration           TEXT,
     tiktok_caption      TEXT,
     audio_path          TEXT,
@@ -296,7 +297,7 @@ enhancement.
 4. **DB for everything persistent** — graph state is ephemeral per run. Personas, run history,
    and future stats live in SQLite. Loaded at node entry, never embedded in state.
 
-5. **Weighted random for content type** — `real_news_ratio` is a per-run coin toss, no
+5. **Weighted random for story mode** — `fictional_news_ratio` is a per-run coin toss, no
    historical correction for MVP. Simple, correct, trivially replaceable.
 
 6. **Sequential fan-out for local Mac** — personas processed one at a time. MPS GPU is the

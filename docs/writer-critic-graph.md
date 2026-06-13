@@ -16,11 +16,11 @@ After each `critic_node` pass, `_critic_router` exits to `END` if any of these h
 
 - `is_fatal_error` is set
 - `iterations == settings.writer_critic_max_iters` (`WRITER_CRITIC_MAX_ITERS`, default 3)
-- `reliability_score >= settings.script_reliability_threshold` (`SCRIPT_RELIABILITY_THRESHOLD`, default 0.8)
+- `review.needs_revision` is false
 
 Otherwise routes back to `writer_node`.
 
-`reliability_score` is the arithmetic mean of the four critic scores: `coherence_score`, `grammar_score`, `unambiguity_score`, `catchiness_score` (each 0.0–1.0).
+The critic uses explicit gates instead of an average reliability score. A failed mode or fact-policy gate must set `needs_revision = true` even when grammar or catchiness is strong.
 
 ## Writer node
 
@@ -30,7 +30,12 @@ Output is truncated to `settings.max_script_length` (`MAX_SCRIPT_LENGTH`, defaul
 
 ## Critic node
 
-Scores the draft on four rubrics and returns concrete `corrections`. Returns an empty `corrections` string when the script passes cleanly.
+Scores the draft on mode compliance, fact policy, persona fit, language, narrative confidence, and catchiness. It returns concrete `corrections`, `diagnostic_reasoning`, and `needs_revision`. Returns an empty `corrections` string when the script passes cleanly.
+
+`story_mode` is selected before the writer/critic graph starts:
+
+- `real_news`: report the source article as grounded news.
+- `fictional_news`: use the source article as inspiration for confident in-universe fictional news. The script should not soften this into prediction, hypothetical, or "imagine if" framing.
 
 ## `base_script` persistence
 

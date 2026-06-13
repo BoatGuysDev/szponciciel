@@ -9,8 +9,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 from TTS.api import TTS
 
 from config import COMPUTE_DEVICE, WHISPER_MODEL
-from nodes.video_assembly_graph.transforms import compose, transcribe_and_align
 from nodes.tts_node import _sanitize_for_tts
+from nodes.video_assembly_graph.transforms import compose, transcribe_and_align
 
 TEXT = (
     "Breaking news from Warsaw. Scientists have discovered that cats can accurately "
@@ -26,9 +26,7 @@ out_path = Path("/tmp/demo_captions_output.mp4")
 # --- 1. TTS ---
 print("Step 1/3 — generating speech…")
 
-tts = TTS(
-    model_name="tts_models/multilingual/multi-dataset/xtts_v2", progress_bar=True
-).to(COMPUTE_DEVICE)
+tts = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2", progress_bar=True).to(COMPUTE_DEVICE)
 tts.tts_to_file(
     text=_sanitize_for_tts(TEXT),
     file_path=str(audio_path),
@@ -38,17 +36,13 @@ tts.tts_to_file(
 
 # --- 2. WhisperX alignment ---
 print("\nStep 2/3 — aligning words…")
-words = transcribe_and_align(
-    audio_path, device=COMPUTE_DEVICE, model_size=WHISPER_MODEL
-)
+words = transcribe_and_align(audio_path, device=COMPUTE_DEVICE, model_size=WHISPER_MODEL)
 print(f"  got {len(words)} word timings")
 
 # --- 3. Pick a random stock video and compose ---
 all_clips = list(Path("media").rglob("*.mp4"))
 if not all_clips:
-    raise FileNotFoundError(
-        "No .mp4 files found in media/. Add stock clips before running."
-    )
+    raise FileNotFoundError("No .mp4 files found in media/. Add stock clips before running.")
 bg_path = random.choice(all_clips)
 print(f"\nStep 3/3 — composing with {bg_path}…")
 compose(bg_path, audio_path, words, out_path)

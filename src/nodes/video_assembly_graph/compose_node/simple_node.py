@@ -1,12 +1,11 @@
 from moviepy import AudioFileClip, VideoFileClip
 
+from nodes.state import PersonaRunState, persona_run_dir
 from nodes.video_assembly_graph.transforms import (
     VIDEO_WRITE_KWARGS,
     fit_vertical,
     loop_to_duration,
 )
-
-from nodes.state import PersonaRunState, persona_run_dir
 
 
 def compose_simple_node(state: PersonaRunState) -> dict:
@@ -21,11 +20,6 @@ def compose_simple_node(state: PersonaRunState) -> dict:
         bg = fit_vertical(bg)
         bg = loop_to_duration(bg, audio.duration)
         bg.with_audio(audio).write_videofile(str(out_path), **VIDEO_WRITE_KWARGS)
-    except Exception as e:
-        return {
-            "is_fatal_error": True,
-            "error_message": f"Simple composition failed: {e}",
-        }
     finally:
         if bg is not None:
             bg.close()

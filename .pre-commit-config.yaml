@@ -1,0 +1,13 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format-uv
+        name: ruff format (uv)
+        entry: uv run ruff format
+        language: system
+        files: \.(py|pyi|ipynb)$
+      - id: ruff-format-check
+        name: ruff format (uv, check)
+        entry: uv run ruff format --check
+        language: system
+        files: \.(py|pyi|ipynb)$

@@ -1,12 +1,23 @@
-import pytest
 from pathlib import Path
 from unittest.mock import patch
-from langgraph.graph import StateGraph, START, END
 
+import pytest
+from langgraph.graph import END, START, StateGraph
+
+from logging_config import get_logger
 from nodes import PersonaRunState
 from nodes.video_assembly_graph.compose_node.node import compose_node
-
 from tests.base_test_class import BaseTestClass
+from utils.agent_utils import LLM_RETRY
+from utils.graph_utils import build_error_handler
+
+log = get_logger(__name__)
+_compose_error_handler = build_error_handler(
+    log,
+    "compose.failed",
+    "Video composition failed",
+    context_keys=("background_video_path", "audio_path"),
+)
 
 _WORD_TIMINGS = [
     {"text": "Hello", "start": 0.0, "end": 0.5},
@@ -18,7 +29,7 @@ class TestComposeNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=PersonaRunState)
-        graph.add_node(compose_node)
+        graph.add_node(compose_node, retry_policy=LLM_RETRY, error_handler=_compose_error_handler)
         graph.add_edge(START, "compose_node")
         graph.add_edge("compose_node", END)
         return graph
@@ -50,9 +61,7 @@ class TestComposeNode(BaseTestClass):
         result = graph.compile().invoke(self._base_state())
 
         assert result.get("is_fatal_error") is None
-        assert result["output_video_path"] == str(
-            Path("runs/run-1/persona-1/output.mp4")
-        )
+        assert result["output_video_path"] == str(Path("runs/run-1/persona-1/output.mp4"))
         self.mock_compose.assert_called_once()
 
     def test_compose_error(self, graph: StateGraph):
@@ -61,4 +70,4 @@ class TestComposeNode(BaseTestClass):
         result = graph.compile().invoke(self._base_state())
 
         assert result["is_fatal_error"]
-        assert "Video composition failed" in result["error_message"]
+        assert result["error_message"] == "Video composition failed: RuntimeError: ffmpeg error"

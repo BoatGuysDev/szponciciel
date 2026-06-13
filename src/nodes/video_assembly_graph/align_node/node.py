@@ -2,9 +2,8 @@ from pathlib import Path
 from typing import TypedDict
 
 from config import settings
-from nodes.video_assembly_graph.transforms import transcribe_and_align
-
 from nodes.state import PersonaRunState, WordTiming
+from nodes.video_assembly_graph.transforms import transcribe_and_align
 
 
 class AlignResult(TypedDict, total=False):
@@ -27,20 +26,10 @@ def align_node(state: PersonaRunState) -> AlignResult:
             "error_message": f"Audio file not found: {audio_path}",
         }
 
-    try:
-        words = transcribe_and_align(
-            audio_path,
-            device=settings.compute_device,
-            model_size=settings.whisper_model,
-        )
-    except Exception as e:
-        return {
-            "is_fatal_error": True,
-            "error_message": f"WhisperX alignment failed: {e}",
-        }
+    words = transcribe_and_align(
+        audio_path,
+        device=settings.compute_device,
+        model_size=settings.whisper_model,
+    )
 
-    return {
-        "word_timings": [
-            {"text": w.text, "start": w.start, "end": w.end} for w in words
-        ]
-    }
+    return {"word_timings": [{"text": w.text, "start": w.start, "end": w.end} for w in words]}

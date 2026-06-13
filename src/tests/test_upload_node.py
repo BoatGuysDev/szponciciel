@@ -1,22 +1,34 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from langgraph.graph import StateGraph, START, END
-from sqlmodel import Session
+
+import pytest
+from langgraph.graph import END, START, StateGraph
+from late.models import PostCreateResponse
 from requests import RequestException
+from sqlmodel import Session
 
 from db import get_engine
+from logging_config import get_logger
 from models import Persona
 from nodes import PersonaRunState
 from nodes.upload_node.node import upload_node
-
 from tests.base_test_class import BaseTestClass
+from utils.agent_utils import LLM_RETRY
+from utils.graph_utils import build_error_handler
+
+log = get_logger(__name__)
+_upload_error_handler = build_error_handler(
+    log,
+    "upload.failed",
+    "Upload failed",
+    context_keys=("run_id", "persona_id"),
+)
 
 
 class TestUploadNode(BaseTestClass):
     @pytest.fixture(name="graph")
     def create_graph(self) -> StateGraph:
         graph = StateGraph(state_schema=PersonaRunState)
-        graph.add_node(upload_node)
+        graph.add_node(upload_node, retry_policy=LLM_RETRY, error_handler=_upload_error_handler)
         graph.add_edge(START, "upload_node")
         graph.add_edge("upload_node", END)
         return graph
@@ -28,7 +40,9 @@ class TestUploadNode(BaseTestClass):
                 "uploadUrl": "https://s3.example.com/upload",
                 "publicUrl": "https://cdn.example.com/video.mp4",
             }
-            mock_client.posts.create.return_value.post = {"_id": "post-123"}
+            mock_client.posts.create.return_value = PostCreateResponse.model_validate(
+                {"message": "ok", "post": {"_id": "post-123"}}
+            )
             self.mock_client = mock_client
             yield mock_client
 
@@ -105,9 +119,7 @@ class TestUploadNode(BaseTestClass):
     def test_presigned_url_failure(self, graph: StateGraph):
         from zernio import ZernioAPIError
 
-        self.mock_client.media.get_media_presigned_url.side_effect = ZernioAPIError(
-            "S3 error"
-        )
+        self.mock_client.media.get_media_presigned_url.side_effect = ZernioAPIError("S3 error")
 
         with Session(get_engine()) as session:
             session.add(self._make_persona())
@@ -116,7 +128,7 @@ class TestUploadNode(BaseTestClass):
         result = graph.compile().invoke(self._base_state())
 
         assert result["is_fatal_error"] is True
-        assert "Failed to get presigned URL" in result["error_message"]
+        assert result["error_message"] == "Upload failed: LateAPIError: S3 error"
         self.mock_put.assert_not_called()
 
     def test_video_file_not_found(self, graph: StateGraph):
@@ -156,15 +168,13 @@ class TestUploadNode(BaseTestClass):
         result = graph.compile().invoke(self._base_state())
 
         assert result["is_fatal_error"] is True
-        assert "Request error" in result["error_message"]
+        assert result["error_message"] == "Upload failed: RequestException: Network error"
         self.mock_client.posts.create.assert_not_called()
 
     def test_create_post_failure(self, graph: StateGraph):
         from zernio import ZernioAPIError
 
-        self.mock_client.posts.create.side_effect = ZernioAPIError(
-            "post creation failed"
-        )
+        self.mock_client.posts.create.side_effect = ZernioAPIError("post creation failed")
 
         with Session(get_engine()) as session:
             session.add(self._make_persona())
@@ -173,4 +183,18 @@ class TestUploadNode(BaseTestClass):
         result = graph.compile().invoke(self._base_state())
 
         assert result["is_fatal_error"] is True
-        assert "Failed to create post" in result["error_message"]
+        assert result["error_message"] == "Upload failed: LateAPIError: post creation failed"
+
+    def test_unexpected_create_post_exception_is_logged(self, graph: StateGraph):
+        with Session(get_engine()) as session:
+            session.add(self._make_persona())
+            session.commit()
+
+        self.mock_client.posts.create.side_effect = KeyError("tiktok_account_id")
+
+        with patch("utils.graph_utils.log_exception") as mock_log_exception:
+            result = graph.compile().invoke(self._base_state())
+
+        assert result["is_fatal_error"] is True
+        assert result["error_message"] == "Upload failed: KeyError: 'tiktok_account_id'"
+        mock_log_exception.assert_called_once()

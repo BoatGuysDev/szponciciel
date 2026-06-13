@@ -1,15 +1,14 @@
-import requests
-from requests import RequestException
-from pathlib import Path
 import time
+from pathlib import Path
 from typing import TypedDict
 
-from zernio import Zernio, ZernioAPIError
+import requests
 from sqlmodel import Session, select
+from zernio import Zernio
 
+from config import settings
 from db import get_engine
 from models import Persona
-from config import settings
 from nodes.state import PersonaRunState
 
 
@@ -24,9 +23,7 @@ _client: Zernio | None = None
 
 def upload_node(state: PersonaRunState) -> UploadResult:
     with Session(get_engine()) as session:
-        persona = session.exec(
-            select(Persona).where(Persona.id == state["persona_id"])
-        ).first()
+        persona = session.exec(select(Persona).where(Persona.id == state["persona_id"])).first()
 
         if not persona:
             return {
@@ -40,15 +37,7 @@ def upload_node(state: PersonaRunState) -> UploadResult:
     if _client is None:
         _client = Zernio(api_key=settings.zernio_api_key)
 
-    try:
-        presigned_result = _client.media.get_media_presigned_url(
-            filename=filename, content_type="video/mp4"
-        )
-    except ZernioAPIError as e:
-        return {
-            "is_fatal_error": True,
-            "error_message": f"Failed to get presigned URL: {e}",
-        }
+    presigned_result = _client.media.get_media_presigned_url(filename=filename, content_type="video/mp4")
 
     upload_url = presigned_result["uploadUrl"]
     public_url = presigned_result["publicUrl"]
@@ -70,16 +59,8 @@ def upload_node(state: PersonaRunState) -> UploadResult:
             "error_message": f"Invalid file type: {video_path.suffix}",
         }
 
-    try:
-        with video_path.open("rb") as f:
-            upload_video_response = requests.put(
-                upload_url, data=f.read(), headers={"Content-Type": "video/mp4"}
-            )
-    except RequestException as e:
-        return {
-            "is_fatal_error": True,
-            "error_message": f"Request error: {e}",
-        }
+    with video_path.open("rb") as f:
+        upload_video_response = requests.put(upload_url, data=f.read(), headers={"Content-Type": "video/mp4"})
 
     if not upload_video_response.ok:
         return {
@@ -87,18 +68,12 @@ def upload_node(state: PersonaRunState) -> UploadResult:
             "error_message": f"Failed to upload video: {upload_video_response.text}",
         }
 
-    try:
-        response = _client.posts.create(
-            media_items=[{"url": public_url, "type": "video"}],
-            content=state["tiktok_caption"],
-            hashtags=state["hashtags"],
-            platforms=[{"platform": "tiktok", "accountId": persona.tiktok_account_id}],
-            publish_now=True,
-        )
-    except ZernioAPIError as e:
-        return {
-            "is_fatal_error": True,
-            "error_message": f"Failed to create post: {e}",
-        }
+    response = _client.posts.create(
+        media_items=[{"url": public_url, "type": "video"}],
+        content=state["tiktok_caption"],
+        hashtags=state["hashtags"],
+        platforms=[{"platform": "tiktok", "accountId": persona.tiktok_account_id}],
+        publish_now=True,
+    )
 
-    return {"tiktok_post_id": response.post["_id"]}
+    return {"tiktok_post_id": response.post.field_id}

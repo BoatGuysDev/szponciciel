@@ -1,4 +1,3 @@
-import logging
 import re
 
 from sqlmodel import Session, select
@@ -9,7 +8,6 @@ from db import get_engine
 from models import Persona
 from nodes.state import PersonaRunState, persona_run_dir
 
-log = logging.getLogger(__name__)
 _tts: TTS | None = None
 
 
@@ -27,9 +25,7 @@ def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
         }
 
     with Session(get_engine()) as session:
-        persona = session.exec(
-            select(Persona).where(Persona.id == state["persona_id"])
-        ).first()
+        persona = session.exec(select(Persona).where(Persona.id == state["persona_id"])).first()
 
         if not persona:
             return {
@@ -53,19 +49,12 @@ def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
         )  # If None, the TTS model will choose a default speaker for the language
 
     global _tts
-    try:
-        if _tts is None:
-            _tts = TTS(
-                model_name=settings.tts_model,
-                progress_bar=True,
-            ).to(settings.compute_device)
-        _tts.tts_to_file(**kwargs)
-    except Exception as e:
-        log.exception("TTS generation failed")
-        return {
-            "is_fatal_error": True,
-            "error_message": f"Error during TTS generation: {str(e)}",
-        }
+    if _tts is None:
+        _tts = TTS(
+            model_name=settings.tts_model,
+            progress_bar=True,
+        ).to(settings.compute_device)
+    _tts.tts_to_file(**kwargs)
 
     return {
         "audio_path": str(out_path),

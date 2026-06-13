@@ -1,16 +1,13 @@
 from typing import TypedDict
-from sqlmodel import select, Session
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.agents import create_agent
-from langchain.messages import HumanMessage
+from sqlmodel import Session, select
 
-from config import settings
 from db import get_engine
-from models import Run, Persona
-
+from models import Persona, Run
+from nodes.narrator_node.response_format import NarratorAgentResponseFormat
 from nodes.narrator_node.system_prompt import NARRATOR_SYSTEM_PROMPT
 from nodes.state import PersonaRunState
+from utils.agent_utils import call_agent
 
 
 class NarratorResult(TypedDict, total=False):
@@ -30,34 +27,29 @@ def narrator_node(state: PersonaRunState) -> NarratorResult:
                 "error_message": f"Run with id {state['run_id']} not found.",
             }
 
-        persona = session.exec(
-            select(Persona).where(Persona.id == state["persona_id"])
-        ).first()
+        persona = session.exec(select(Persona).where(Persona.id == state["persona_id"])).first()
         if not persona:
             return {
                 "is_fatal_error": True,
                 "error_message": f"Persona with id {state['persona_id']} not found.",
             }
 
-    if not all([run.base_script, persona.language, persona.style, persona.tone]):
+    base_script = state.get("base_script") or run.base_script
+    if not all([base_script, persona.language, persona.style, persona.tone]):
         return {
             "is_fatal_error": True,
             "error_message": "Missing required information to create narration.",
         }
 
-    agent = create_agent(
-        model=ChatGoogleGenerativeAI(model=settings.llm_model),
-        system_prompt=NARRATOR_SYSTEM_PROMPT,
-    )
-
     prompt = f"""
-        Create a narration for the following script: {run.base_script}
+        Create a narration for the following script: {base_script}
 
+        Story mode: {state.get("story_mode", "real_news")}.
         The narration must be in {persona.language} and match the following style and tone: {persona.style}, {persona.tone}.
     """
 
-    response = agent.invoke({"messages": [HumanMessage(content=prompt)]})
+    narration = call_agent(NARRATOR_SYSTEM_PROMPT, NarratorAgentResponseFormat, prompt=prompt).narration
 
     return {
-        "narration": response["messages"][-1].content,
+        "narration": narration,
     }
