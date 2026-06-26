@@ -2,6 +2,11 @@ from config import settings
 from db.seeds._utils import seed_records
 from models import Persona
 
+# Voice speakers
+
+# Female: Alison Deitlinde, Gitta Nikolina, Tanja Adelina, Andrew Chipper
+# Male: Luis Moray, Ige Behringer
+
 
 def load() -> int:
     if not settings.ground_truth_media_account_id:
@@ -14,7 +19,7 @@ def load() -> int:
             style="fictional news documentary",
             tone="confident, straight-faced",
             language="en",
-            voice_speaker="Claribel Dervla",
+            voice_speaker="Luis Moray",
             show_captions=True,
             fictional_news_ratio=0.9,
             is_active=True,
