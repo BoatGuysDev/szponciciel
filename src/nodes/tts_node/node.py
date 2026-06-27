@@ -42,7 +42,7 @@ def tts_node(state: PersonaRunState) -> dict[str, str | bool]:
         "language": persona.language or "en",
     }
     if persona.voice_speaker_wav is not None:
-        kwargs["speaker_wav"] = persona.voice_speaker_wav
+        kwargs["speaker_wav"] = settings.voices_root / persona.voice_speaker_wav
     else:
         kwargs["speaker"] = (
             persona.voice_speaker
