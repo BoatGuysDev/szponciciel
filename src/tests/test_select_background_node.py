@@ -31,7 +31,8 @@ class TestSelectBackgroundNode(BaseTestClass):
 
     def test_sets_category_and_path(self, graph: StateGraph):
         provider = MagicMock()
-        provider.get_video.return_value = Path("/media/satisfying/soap_low.mp4")
+        media_path = Path("/media/satisfying/soap_low.mp4")
+        provider.get_video.return_value = media_path
 
         with patch(
             "nodes.select_background_node.node.StockVideoProvider",
@@ -40,7 +41,7 @@ class TestSelectBackgroundNode(BaseTestClass):
             result = graph.compile().invoke({})
 
         assert "is_fatal_error" not in result
-        assert result["background_video_path"] == "/media/satisfying/soap_low.mp4"
+        assert result["background_video_path"] == str(media_path)
         assert result["video_category"] in VALID_CATEGORIES
         # category chosen by the node is the one passed to the provider
         request = provider.get_video.call_args.args[0]

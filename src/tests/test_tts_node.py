@@ -6,6 +6,7 @@ from langgraph.graph import END, START, StateGraph
 from sqlalchemy import Engine
 from sqlmodel import Session
 
+from config import settings
 from models import Persona
 from nodes import PersonaRunState, tts_node
 from tests.base_test_class import BaseTestClass
@@ -71,7 +72,7 @@ class TestTtsNode(BaseTestClass):
         assert result["error_message"] == "Narration text is empty."
 
     def test_successful_tts_with_speaker_wav(self, graph: StateGraph, engine: Engine):
-        self._seed_persona(engine, voice_speaker_wav="path/to/voice.wav", voice_speaker=None)
+        self._seed_persona(engine, voice_speaker_wav="voice.wav", voice_speaker=None)
 
         result = graph.compile().invoke(
             {
@@ -87,7 +88,7 @@ class TestTtsNode(BaseTestClass):
             text="Hello, this is a test narration...",
             file_path=audio_path,
             language="en",
-            speaker_wav="path/to/voice.wav",
+            speaker_wav=settings.voices_root / "voice.wav",
         )
 
         assert result.get("is_fatal_error") is None
