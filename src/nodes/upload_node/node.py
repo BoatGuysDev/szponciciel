@@ -68,9 +68,13 @@ def upload_node(state: PersonaRunState) -> UploadResult:
             "error_message": f"Failed to upload video: {upload_video_response.text}",
         }
 
+    description = state["tiktok_caption"]
+    if state["hashtags"]:
+        description += f"\n\n{' '.join(state['hashtags'])}"
+
     response = _client.posts.create(
         media_items=[{"url": public_url, "type": "video"}],
-        content=state["tiktok_caption"],
+        content=description,
         hashtags=state["hashtags"],
         platforms=[{"platform": "tiktok", "accountId": persona.tiktok_account_id}],
         publish_now=True,

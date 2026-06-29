@@ -101,9 +101,11 @@ class TestUploadNode(BaseTestClass):
         assert result.get("tiktok_post_id") == "post-123"
         self.mock_client.media.get_media_presigned_url.assert_called_once()
         self.mock_put.assert_called_once()
+
+        description = "Breaking news!\n\n#news #tiktok"
         self.mock_client.posts.create.assert_called_once_with(
             media_items=[{"url": "https://cdn.example.com/video.mp4", "type": "video"}],
-            content="Breaking news!",
+            content=description,
             hashtags=["#news", "#tiktok"],
             platforms=[{"platform": "tiktok", "accountId": "tiktok-news"}],
             publish_now=True,
