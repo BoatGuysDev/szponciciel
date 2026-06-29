@@ -18,7 +18,7 @@ class PersonaRun(SQLModel, table=True):
     video_category: str | None = None
     background_video_path: str | None = None
     output_video_path: str | None = None
-    tiktok_post_id: str | None = None
+    zernio_post_id: str | None = None
     error_message: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     started_at: datetime | None = None
