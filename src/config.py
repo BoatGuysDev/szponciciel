@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     log_file: Path = PROJECT_ROOT / "runs" / "logs" / "pipeline.jsonl"
 
     media_root: Path = PROJECT_ROOT / "media"
+    voices_root: Path = PROJECT_ROOT / "media/voices"
 
     compute_device: str = "cpu"
     whisper_model: str = "base"

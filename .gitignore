@@ -14,6 +14,9 @@ __pycache__/
 # Downloaded stock videos
 media/**/*.mp4
 
+# Voice recordings for voice cloning
+media/voices/*.wav
+
 # Generated pipeline outputs (audio, video)
 runs/
 
