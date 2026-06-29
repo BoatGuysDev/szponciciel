@@ -2,12 +2,13 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import JSON, Column
+from sqlalchemy import JSON, Column, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
 class RunMetrics(SQLModel, table=True):
     __tablename__ = "run_metrics"
+    __table_args__ = (UniqueConstraint("persona_run_id", name="uq_run_metrics_persona_run_id"),)
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     run_id: str = Field(foreign_key="runs.id", index=True)
