@@ -34,7 +34,7 @@ def main() -> int:
     print(f"Run {result.get('run_id')}: {completed}/{len(outcomes)} videos posted")
     for o in outcomes:
         if o.get("status") == "completed":
-            print(f"  ✓ {o['persona_id']} -> {o.get('tiktok_post_id')}")
+            print(f"  ✓ {o['persona_id']} -> {o.get('zernio_post_id')}")
         else:
             print(f"  ✗ {o['persona_id']}: {o.get('error_message')}")
 

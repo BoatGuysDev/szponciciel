@@ -48,7 +48,7 @@ class TestRunPersonasNode(BaseTestClass):
                 "narration": "n",
                 "tiktok_caption": "c",
                 "output_video_path": "out.mp4",
-                "tiktok_post_id": "post-123",
+                "zernio_post_id": "post-123",
             },
             {"is_fatal_error": True, "error_message": "boom"},
         ]
@@ -58,7 +58,7 @@ class TestRunPersonasNode(BaseTestClass):
 
         outcomes = {o["persona_id"]: o for o in result["outcomes"]}
         assert outcomes["p1"]["status"] == "completed"
-        assert outcomes["p1"]["tiktok_post_id"] == "post-123"
+        assert outcomes["p1"]["zernio_post_id"] == "post-123"
         assert outcomes["p2"]["status"] == "failed"
         assert outcomes["p2"]["error_message"] == "boom"
 
@@ -72,7 +72,7 @@ class TestRunPersonasNode(BaseTestClass):
             rows = session.exec(select(PersonaRun).where(PersonaRun.run_id == run_id)).all()
             by_persona = {r.persona_id: r for r in rows}
             assert by_persona["p1"].status == "completed"
-            assert by_persona["p1"].tiktok_post_id == "post-123"
+            assert by_persona["p1"].zernio_post_id == "post-123"
             assert by_persona["p1"].story_mode in {"real_news", "fictional_news"}
             assert by_persona["p2"].status == "failed"
             assert by_persona["p2"].error_message == "boom"
@@ -92,7 +92,7 @@ class TestRunPersonasNode(BaseTestClass):
     def test_missing_persona_is_marked_failed_and_skipped(self, graph: StateGraph, engine: Engine):
         run_id = _seed(engine)
         mock_compiled = MagicMock()
-        mock_compiled.invoke.return_value = {"tiktok_post_id": "ok"}
+        mock_compiled.invoke.return_value = {"zernio_post_id": "ok"}
 
         with patch("orchestrator.run_personas_node.persona_graph", return_value=mock_compiled):
             result = graph.compile().invoke({"run_id": run_id, "persona_ids": ["p1", "missing-persona"]})

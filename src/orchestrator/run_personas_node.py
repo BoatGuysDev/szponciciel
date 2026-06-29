@@ -81,7 +81,7 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
         if status == "failed":
             log.error("persona.failed", error=result.get("error_message"))
         else:
-            log.info("persona.completed", post_id=result.get("tiktok_post_id"))
+            log.info("persona.completed", post_id=result.get("zernio_post_id"))
         structlog.contextvars.clear_contextvars()
 
         with Session(get_engine()) as session:
@@ -93,7 +93,7 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
             persona_run.video_category = result.get("video_category")
             persona_run.background_video_path = result.get("background_video_path")
             persona_run.output_video_path = result.get("output_video_path")
-            persona_run.tiktok_post_id = result.get("tiktok_post_id")
+            persona_run.zernio_post_id = result.get("zernio_post_id")
             persona_run.error_message = result.get("error_message")
             persona_run.completed_at = datetime.now(timezone.utc)
             session.add(persona_run)
@@ -104,7 +104,7 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
                 "persona_id": persona_id,
                 "persona_run_id": persona_run_id,
                 "status": status,
-                "tiktok_post_id": result.get("tiktok_post_id"),
+                "zernio_post_id": result.get("zernio_post_id"),
                 "error_message": result.get("error_message"),
             }
         )

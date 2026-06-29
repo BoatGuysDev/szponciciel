@@ -65,7 +65,7 @@ class PersonaRunState(TypedDict):
     video_category: str
     background_video_path: str
     output_video_path: str            # runs/{run_id}/{persona_id}/output.mp4
-    tiktok_post_id: str | None
+    zernio_post_id: str | None
 ```
 
 ---
@@ -186,14 +186,14 @@ CREATE TABLE persona_runs (
     video_category      TEXT,
     background_video_path TEXT,
     output_video_path   TEXT,
-    tiktok_post_id      TEXT,               -- nullable, returned after upload
+    zernio_post_id      TEXT,               -- nullable, returned after upload
     error_message       TEXT,               -- nullable
     started_at          TIMESTAMP,
     completed_at        TIMESTAMP
 );
 
 -- Future: performance data fetched from TikTok
--- Seam is tiktok_post_id in persona_runs
+-- Seam is zernio_post_id in persona_runs
 -- CREATE TABLE video_stats (
 --     id                  TEXT PRIMARY KEY,
 --     persona_run_id      TEXT REFERENCES persona_runs(id),

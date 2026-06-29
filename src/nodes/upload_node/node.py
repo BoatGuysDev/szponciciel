@@ -13,7 +13,7 @@ from nodes.state import PersonaRunState
 
 
 class UploadResult(TypedDict, total=False):
-    tiktok_post_id: str
+    zernio_post_id: str
     is_fatal_error: bool
     error_message: str | None
 
@@ -80,4 +80,4 @@ def upload_node(state: PersonaRunState) -> UploadResult:
         publish_now=True,
     )
 
-    return {"tiktok_post_id": response.post.field_id}
+    return {"zernio_post_id": response.post.field_id}
