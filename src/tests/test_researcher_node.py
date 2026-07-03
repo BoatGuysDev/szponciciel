@@ -42,7 +42,7 @@ def _mock_tavily(articles: list[dict]):
 
 def _mock_analytics(summary: dict | None = None):
     service = MagicMock()
-    service.summarize.return_value = summary or EMPTY_ANALYTICS
+    service.refresh_and_summarize.return_value = summary or EMPTY_ANALYTICS
     return patch.object(researcher_module, "ResearchAnalyticsService", MagicMock(return_value=service))
 
 

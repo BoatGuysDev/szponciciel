@@ -9,8 +9,13 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session, select
 
 from db import get_engine
-from models import PersonaRun, Run, RunMetrics
+from logging_config import get_logger
+from models import Persona, PersonaRun, Run, RunMetrics
 from research_categories import NEWS_CATEGORY_IDS
+from services.run_metrics_service import RunMetricsService
+from utils.logging import log_exception
+
+log = get_logger(__name__)
 
 
 class PerformanceSummary(TypedDict):
@@ -52,6 +57,32 @@ class _MetricRecord(TypedDict):
 class ResearchAnalyticsService:
     def __init__(self, *, engine: Engine | None = None) -> None:
         self._engine = engine or get_engine()
+
+    def refresh_from_zernio(self, *, days: int = 7) -> list[RunMetrics]:
+        """Fetch latest Zernio analytics for active personas and persist snapshots."""
+
+        with Session(self._engine) as session:
+            personas = list(session.exec(select(Persona).where(Persona.is_active)).all())
+
+        metrics_service = RunMetricsService(engine=self._engine)
+        refreshed_rows: list[RunMetrics] = []
+        for persona in personas:
+            try:
+                refreshed_rows.extend(metrics_service.generate_for_persona(persona, days=days))
+            except Exception as exc:
+                log_exception(log, "research_analytics.refresh_failed", exc, persona_id=persona.id)
+                continue
+        return refreshed_rows
+
+    def refresh_and_summarize(
+        self,
+        *,
+        refresh_days: int = 7,
+        summary_days: int = 14,
+        limit: int = 100,
+    ) -> ResearchAnalyticsSummary:
+        self.refresh_from_zernio(days=refresh_days)
+        return self.summarize(days=summary_days, limit=limit)
 
     def summarize(self, *, days: int = 14, limit: int = 100) -> ResearchAnalyticsSummary:
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
