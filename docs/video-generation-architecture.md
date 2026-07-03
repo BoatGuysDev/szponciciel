@@ -192,7 +192,7 @@ CREATE TABLE persona_runs (
     completed_at        TIMESTAMP
 );
 
--- Future: performance data fetched from TikTok
+-- Future: performance data fetched from Zernio analytics
 -- Seam is zernio_post_id in persona_runs
 -- CREATE TABLE video_stats (
 --     id                  TEXT PRIMARY KEY,

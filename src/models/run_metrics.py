@@ -2,17 +2,17 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import JSON, Column, UniqueConstraint
+from sqlalchemy import JSON, Column, Index
 from sqlmodel import Field, SQLModel
 
 
 class RunMetrics(SQLModel, table=True):
     __tablename__ = "run_metrics"
-    __table_args__ = (UniqueConstraint("persona_run_id", name="uq_run_metrics_persona_run_id"),)
+    __table_args__ = (Index("ux_run_metrics_persona_run_id", "persona_run_id", unique=True),)
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     run_id: str = Field(foreign_key="runs.id", index=True)
-    persona_run_id: str = Field(foreign_key="persona_runs.id", index=True)
+    persona_run_id: str = Field(foreign_key="persona_runs.id")
     persona_id: str = Field(foreign_key="personas.id", index=True)
     zernio_post_id: str = Field(index=True)
     platform: str = Field(default="tiktok", index=True)

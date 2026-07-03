@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 
 from db import get_engine, reset_db
 from models import Persona, PersonaRun, Run, RunMetrics
-from services.run_metrics_service import RunMetricsService
+from services import RunMetricsService, generate_run_metrics_for_persona
 
 
 @pytest.fixture(autouse=True)
@@ -185,3 +185,117 @@ def test_generate_run_metrics_for_persona_skips_incomplete_runs():
 
     assert rows == []
     client.analytics.get_analytics.assert_not_called()
+
+
+def test_generate_run_metrics_for_persona_export_smoke_test():
+    persona = _seed_persona_run()
+    client = MagicMock()
+    client.analytics.get_analytics.return_value = {
+        "posts": [{"postId": "post-123", "analytics": {"views": 7}}],
+        "pagination": {"page": 1, "limit": 100, "total": 1},
+    }
+
+    rows = generate_run_metrics_for_persona(
+        persona,
+        client=client,
+        fetched_at=datetime(2026, 6, 29, 13, 0, tzinfo=timezone.utc),
+    )
+
+    assert len(rows) == 1
+    assert rows[0].views == 7
+
+
+def test_generate_run_metrics_fetches_zernio_after_read_session_is_closed(monkeypatch):
+    persona = _seed_persona_run()
+    client = MagicMock()
+    client.analytics.get_analytics.return_value = {
+        "posts": [{"postId": "post-123", "analytics": {"views": 10}}],
+        "pagination": {"page": 1, "limit": 100, "total": 1},
+    }
+    session_depth = 0
+    fetch_session_depth = None
+    service = RunMetricsService(client=client)
+
+    original_iter = service._iter_analytics_posts
+
+    def tracking_iter(*args, **kwargs):
+        nonlocal fetch_session_depth
+        fetch_session_depth = session_depth
+        return original_iter(*args, **kwargs)
+
+    class TrackingSession(Session):
+        def __enter__(self):
+            nonlocal session_depth
+            session_depth += 1
+            return super().__enter__()
+
+        def __exit__(self, *args):
+            nonlocal session_depth
+            try:
+                return super().__exit__(*args)
+            finally:
+                session_depth -= 1
+
+    monkeypatch.setattr("services.run_metrics_service.Session", TrackingSession)
+    monkeypatch.setattr(service, "_iter_analytics_posts", tracking_iter)
+
+    rows = service.generate_for_persona(persona)
+
+    assert len(rows) == 1
+    assert fetch_session_depth == 0
+
+
+def test_iter_analytics_posts_raises_when_page_limit_is_exceeded(monkeypatch):
+    persona = _seed_persona_run()
+    client = MagicMock()
+    client.analytics.get_analytics.return_value = {
+        "posts": [{"postId": "post-123"}],
+        "pagination": {"hasNextPage": True},
+    }
+    service = RunMetricsService(client=client)
+    monkeypatch.setattr("services.run_metrics_service.MAX_ANALYTICS_PAGES", 2)
+
+    with pytest.raises(RuntimeError, match="exceeded 2 pages"):
+        service._iter_analytics_posts(
+            persona,
+            from_date=datetime(2026, 6, 22, tzinfo=timezone.utc),
+            to_date=datetime(2026, 6, 29, tzinfo=timezone.utc),
+        )
+
+    assert client.analytics.get_analytics.call_count == 2
+
+
+def test_build_run_metrics_matches_snake_case_account_id_before_fallback():
+    persona = Persona(
+        id="persona-1",
+        tiktok_account_id="account-1",
+        language="en",
+        style="dramatic",
+        tone="serious",
+    )
+    persona_run = PersonaRun(run_id="run-1", persona_id=persona.id, zernio_post_id="post-123")
+    payload = {
+        "postId": "post-123",
+        "platformAnalytics": [
+            {
+                "platform": "tiktok",
+                "account_id": "other-account",
+                "analytics": {"views": 999},
+            },
+            {
+                "platform": "tiktok",
+                "account_id": "account-1",
+                "analytics": {"views": 123},
+            },
+        ],
+    }
+
+    metrics = RunMetricsService(client=MagicMock()).build_run_metrics(
+        persona=persona,
+        persona_run=persona_run,
+        payload=payload,
+        fetched_at=datetime(2026, 6, 29, 13, 0, tzinfo=timezone.utc),
+    )
+
+    assert metrics.account_id == "account-1"
+    assert metrics.views == 123

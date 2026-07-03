@@ -9,7 +9,13 @@ from zernio import Zernio
 
 from config import settings
 from db import get_engine
+from logging_config import get_logger
 from models import Persona, PersonaRun, RunMetrics
+from utils.logging import log_exception
+
+log = get_logger(__name__)
+MAX_ANALYTICS_PAGES = 100
+ANALYTICS_PAGE_LIMIT = 100
 
 
 class RunMetricsService:
@@ -43,23 +49,30 @@ class RunMetricsService:
                 .where(PersonaRun.zernio_post_id.is_not(None))
                 .where(PersonaRun.completed_at >= cutoff_time.replace(tzinfo=None))
             ).all()
-            persona_runs_by_post_id = {persona_run.zernio_post_id: persona_run for persona_run in persona_runs}
-            if not persona_runs_by_post_id:
-                return []
+        persona_runs_by_post_id = {persona_run.zernio_post_id: persona_run for persona_run in persona_runs}
+        if not persona_runs_by_post_id:
+            return []
 
-            metrics_rows: list[RunMetrics] = []
-            for post_payload in self._iter_analytics_posts(persona, from_date=cutoff_time, to_date=snapshot_time):
-                zernio_post_id = _zernio_post_id(post_payload)
-                persona_run = persona_runs_by_post_id.get(zernio_post_id)
-                if persona_run is None:
-                    continue
+        post_payloads = self._iter_analytics_posts(persona, from_date=cutoff_time, to_date=snapshot_time)
+        fetched_metrics_rows = []
+        for post_payload in post_payloads:
+            zernio_post_id = _zernio_post_id(post_payload)
+            persona_run = persona_runs_by_post_id.get(zernio_post_id)
+            if persona_run is None:
+                continue
 
-                fetched_metrics = self.build_run_metrics(
+            fetched_metrics_rows.append(
+                self.build_run_metrics(
                     persona=persona,
                     persona_run=persona_run,
                     payload=post_payload,
                     fetched_at=snapshot_time,
                 )
+            )
+
+        with Session(self._engine) as session:
+            metrics_rows: list[RunMetrics] = []
+            for fetched_metrics in fetched_metrics_rows:
                 metrics = self._upsert_run_metrics(session, fetched_metrics)
                 session.add(metrics)
                 metrics_rows.append(metrics)
@@ -79,12 +92,15 @@ class RunMetricsService:
         posts: list[dict[str, Any]] = []
         page = 1
         while True:
+            if page > MAX_ANALYTICS_PAGES:
+                raise RuntimeError(f"Zernio analytics pagination exceeded {MAX_ANALYTICS_PAGES} pages")
+
             payload = self.client.analytics.get_analytics(
                 platform="tiktok",
                 account_id=persona.tiktok_account_id,
                 from_date=from_date.date().isoformat(),
                 to_date=to_date.date().isoformat(),
-                limit=100,
+                limit=ANALYTICS_PAGE_LIMIT,
                 page=page,
             )
 
@@ -261,7 +277,8 @@ def _find_platform_payload(post_payload: dict[str, Any], persona: Persona) -> di
     for entry in platform_entries:
         if not isinstance(entry, dict):
             continue
-        if entry.get("platform") == "tiktok" and entry.get("accountId") == persona.tiktok_account_id:
+        entry_account_id = entry.get("accountId") or entry.get("account_id")
+        if entry.get("platform") == "tiktok" and entry_account_id == persona.tiktok_account_id:
             return entry
 
     for entry in platform_entries:
@@ -308,7 +325,8 @@ def _parse_datetime(value: Any) -> datetime | None:
     normalized = value.replace("Z", "+00:00")
     try:
         return _ensure_aware_utc(datetime.fromisoformat(normalized))
-    except ValueError:
+    except ValueError as exc:
+        log_exception(log, "run_metrics.datetime_parse_failed", exc, value=value)
         return None
 
 
