@@ -8,7 +8,7 @@ from sqlmodel import Session
 
 from db import get_engine
 from logging_config import get_logger
-from models import Persona
+from models import Persona, Run
 from nodes import PersonaRunState
 from nodes.upload_node.node import upload_node
 from tests.base_test_class import BaseTestClass
@@ -83,14 +83,31 @@ class TestUploadNode(BaseTestClass):
     def _base_state(self, persona_id: str = "1"):
         return {
             "run_id": "run-1",
+            "persona_run_id": "persona-run-1",
             "persona_id": persona_id,
+            "story_mode": "real_news",
+            "base_script": "A base script.",
+            "narration": "A narration.",
             "tiktok_caption": "Breaking news!",
             "hashtags": ["#news", "#tiktok"],
+            "video_category": "news",
             "output_video_path": "path/to/video.mp4",
         }
 
+    def _make_run(self, **kwargs) -> Run:
+        defaults = {
+            "id": "run-1",
+            "status": "running",
+            "source_article_url": "https://example.com/news",
+            "source_article_title": "Source headline",
+            "base_script": "Stored base script.",
+        }
+        defaults.update(kwargs)
+        return Run(**defaults)
+
     def test_successful_upload(self, graph: StateGraph):
         with Session(get_engine()) as session:
+            session.add(self._make_run())
             session.add(self._make_persona())
             session.commit()
 
@@ -109,6 +126,35 @@ class TestUploadNode(BaseTestClass):
             hashtags=["#news", "#tiktok"],
             platforms=[{"platform": "tiktok", "accountId": "tiktok-news"}],
             publish_now=True,
+            metadata={
+                "schema_version": 1,
+                "app": "szponciciel",
+                "run": {
+                    "id": "run-1",
+                    "source_article_url": "https://example.com/news",
+                    "source_article_title": "Source headline",
+                },
+                "persona_run": {
+                    "id": "persona-run-1",
+                    "story_mode": "real_news",
+                },
+                "persona": {
+                    "id": "1",
+                    "tiktok_account_id": "tiktok-news",
+                    "language": "en",
+                    "style": "dramatic",
+                    "tone": "serious",
+                },
+                "generation": {
+                    "llm_model": "gemini-2.5-flash-lite",
+                    "writer_critic_max_iters": 3,
+                    "base_script": "A base script.",
+                    "narration": "A narration.",
+                    "caption": "Breaking news!",
+                    "hashtags": ["#news", "#tiktok"],
+                    "video_category": "news",
+                },
+            },
         )
 
     def test_persona_not_found(self, graph: StateGraph):
@@ -118,12 +164,24 @@ class TestUploadNode(BaseTestClass):
         assert "missing-persona" in result["error_message"]
         self.mock_client.media.get_media_presigned_url.assert_not_called()
 
+    def test_run_not_found(self, graph: StateGraph):
+        with Session(get_engine()) as session:
+            session.add(self._make_persona())
+            session.commit()
+
+        result = graph.compile().invoke(self._base_state())
+
+        assert result["is_fatal_error"] is True
+        assert "run-1" in result["error_message"]
+        self.mock_client.media.get_media_presigned_url.assert_not_called()
+
     def test_presigned_url_failure(self, graph: StateGraph):
         from zernio import ZernioAPIError
 
         self.mock_client.media.get_media_presigned_url.side_effect = ZernioAPIError("S3 error")
 
         with Session(get_engine()) as session:
+            session.add(self._make_run())
             session.add(self._make_persona())
             session.commit()
 
@@ -137,6 +195,7 @@ class TestUploadNode(BaseTestClass):
         self.mock_video_path.exists.return_value = False
 
         with Session(get_engine()) as session:
+            session.add(self._make_run())
             session.add(self._make_persona())
             session.commit()
 
@@ -151,6 +210,7 @@ class TestUploadNode(BaseTestClass):
         self.mock_put.return_value.text = "403 Forbidden"
 
         with Session(get_engine()) as session:
+            session.add(self._make_run())
             session.add(self._make_persona())
             session.commit()
 
@@ -164,6 +224,7 @@ class TestUploadNode(BaseTestClass):
         self.mock_put.side_effect = RequestException("Network error")
 
         with Session(get_engine()) as session:
+            session.add(self._make_run())
             session.add(self._make_persona())
             session.commit()
 
@@ -179,6 +240,7 @@ class TestUploadNode(BaseTestClass):
         self.mock_client.posts.create.side_effect = ZernioAPIError("post creation failed")
 
         with Session(get_engine()) as session:
+            session.add(self._make_run())
             session.add(self._make_persona())
             session.commit()
 
@@ -189,6 +251,7 @@ class TestUploadNode(BaseTestClass):
 
     def test_unexpected_create_post_exception_is_logged(self, graph: StateGraph):
         with Session(get_engine()) as session:
+            session.add(self._make_run())
             session.add(self._make_persona())
             session.commit()
 

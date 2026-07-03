@@ -57,6 +57,7 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
             result = compiled.invoke(
                 {
                     "run_id": run_id,
+                    "persona_run_id": persona_run_id,
                     "persona_id": persona_id,
                     "story_mode": story_mode,
                     "video_strategy": "stock",
@@ -66,7 +67,7 @@ def run_personas_node(state: OrchestratorState) -> OrchestratorState:
                 },
                 config={
                     "run_name": f"persona:{persona_id}",
-                    "metadata": {"run_id": run_id, "persona_id": persona_id},
+                    "metadata": {"run_id": run_id, "persona_run_id": persona_run_id, "persona_id": persona_id},
                     "tags": [story_mode],
                 },
             )

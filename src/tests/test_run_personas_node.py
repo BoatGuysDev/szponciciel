@@ -66,6 +66,7 @@ class TestRunPersonasNode(BaseTestClass):
         assert mock_compiled.invoke.call_count == 2
         first_state = mock_compiled.invoke.call_args_list[0].args[0]
         assert first_state["story_mode"] in {"real_news", "fictional_news"}
+        assert first_state["persona_run_id"] == outcomes["p1"]["persona_run_id"]
         assert "content_type" not in first_state
 
         with Session(engine) as session:

@@ -29,6 +29,7 @@ class WordTiming(TypedDict):
 
 class PersonaRunState(TypedDict):
     run_id: str
+    persona_run_id: str
     persona_id: str
     story_mode: Literal["real_news", "fictional_news"]
     topic: str | None
