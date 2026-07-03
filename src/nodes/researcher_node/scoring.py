@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from datetime import date, datetime, time, timezone
 from typing import Any, TypedDict
 
 from services.research_analytics_service import ResearchAnalyticsSummary
@@ -25,6 +26,8 @@ def compute_research_score(
     emotional_intensity: float,
     audience_breadth: float,
     search_kind: str,
+    published_at: Any | None = None,
+    published_date: Any | None = None,
 ) -> ResearchScore:
     category_score = _category_score(category, analytics)
     topic_score = _topic_score(topic, analytics)
@@ -34,8 +37,8 @@ def compute_research_score(
         emotional_intensity=emotional_intensity,
         audience_breadth=audience_breadth,
     )
-    recency_score = 1.0
-    exploration_bonus = 0.15 if search_kind == "explore" or category in analytics["underexplored_categories"] else 0.0
+    recency_score = _recency_score(published_at or published_date)
+    exploration_bonus = 1.0 if search_kind == "explore" or category in analytics["underexplored_categories"] else 0.0
 
     final_score = (
         0.45 * category_score
@@ -102,3 +105,37 @@ def _jaccard(left: set[str], right: set[str]) -> float:
 
 def _clamp(value: Any) -> float:
     return max(0.0, min(float(value), 1.0))
+
+
+def _recency_score(published_value: Any) -> float:
+    published_at = _parse_published_datetime(published_value)
+    if published_at is None:
+        return 0.5
+
+    age_hours = max((datetime.now(timezone.utc) - published_at).total_seconds() / 3600, 0.0)
+    return round(max(0.0, 1.0 - age_hours / 72.0), 4)
+
+
+def _parse_published_datetime(value: Any) -> datetime | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        parsed = value
+    elif isinstance(value, date):
+        parsed = datetime.combine(value, time(hour=12), tzinfo=timezone.utc)
+    elif isinstance(value, (int, float)):
+        parsed = datetime.fromtimestamp(value, tz=timezone.utc)
+    else:
+        text = str(value).strip()
+        if not text:
+            return None
+        if text.endswith("Z"):
+            text = f"{text[:-1]}+00:00"
+        try:
+            parsed = datetime.fromisoformat(text)
+        except ValueError:
+            return None
+
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)

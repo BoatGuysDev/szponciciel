@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -299,29 +300,70 @@ class TestResearcherNode(BaseTestClass):
         assert "is_fatal_error" not in result
         assert result["source_article_url"] == "https://t.com/high"
 
+    def test_analytics_backed_score_weights_historical_category_performance(self):
+        analytics = {
+            "top_categories": [
+                {"name": "ai", "videos": 3, "score": 0.9, "avg_views_per_hour": 500.0, "avg_engagement_rate": 0.12}
+            ],
+            "top_topics": [
+                {
+                    "name": "AI agents",
+                    "videos": 2,
+                    "score": 0.8,
+                    "avg_views_per_hour": 450.0,
+                    "avg_engagement_rate": 0.1,
+                }
+            ],
+            "underexplored_categories": ["world"],
+            "recent_winners": [],
+        }
 
-def test_analytics_backed_score_weights_historical_category_performance():
-    analytics = {
-        "top_categories": [
-            {"name": "ai", "videos": 3, "score": 0.9, "avg_views_per_hour": 500.0, "avg_engagement_rate": 0.12}
-        ],
-        "top_topics": [
-            {"name": "AI agents", "videos": 2, "score": 0.8, "avg_views_per_hour": 450.0, "avg_engagement_rate": 0.1}
-        ],
-        "underexplored_categories": ["world"],
-        "recent_winners": [],
-    }
+        score = compute_research_score(
+            topic="AI agents replace office tasks",
+            category="ai",
+            analytics=analytics,
+            hook_strength=0.8,
+            urgency=0.7,
+            emotional_intensity=0.6,
+            audience_breadth=0.9,
+            search_kind="exploit",
+        )
 
-    score = compute_research_score(
-        topic="AI agents replace office tasks",
-        category="ai",
-        analytics=analytics,
-        hook_strength=0.8,
-        urgency=0.7,
-        emotional_intensity=0.6,
-        audience_breadth=0.9,
-        search_kind="exploit",
-    )
+        assert score["category_performance_score"] == 0.9
+        assert score["final_research_score"] > 0.6
 
-    assert score["category_performance_score"] == 0.9
-    assert score["final_research_score"] > 0.6
+    def test_score_uses_publish_metadata_and_exploration_bonus(self):
+        analytics = {
+            "top_categories": [],
+            "top_topics": [],
+            "underexplored_categories": ["world"],
+            "recent_winners": [],
+        }
+        now = datetime.now(timezone.utc)
+
+        fresh_score = compute_research_score(
+            topic="Weather alert",
+            category="world",
+            analytics=analytics,
+            hook_strength=0.5,
+            urgency=0.5,
+            emotional_intensity=0.5,
+            audience_breadth=0.5,
+            search_kind="explore",
+            published_date=now.isoformat(),
+        )
+        old_score = compute_research_score(
+            topic="Weather alert",
+            category="world",
+            analytics=analytics,
+            hook_strength=0.5,
+            urgency=0.5,
+            emotional_intensity=0.5,
+            audience_breadth=0.5,
+            search_kind="explore",
+            published_date=(now - timedelta(days=7)).isoformat(),
+        )
+
+        assert fresh_score["recency_score"] > old_score["recency_score"]
+        assert fresh_score["final_research_score"] > old_score["final_research_score"]
+        assert fresh_score["exploration_bonus"] == 1.0

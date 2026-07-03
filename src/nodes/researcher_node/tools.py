@@ -48,14 +48,18 @@ def fetch_news_candidates(query: str | None = None, category: str | None = None)
             if not url or url in seen_urls:
                 continue
             seen_urls.add(url)
-            candidates.append(
-                {
-                    "title": r.get("title", ""),
-                    "url": url,
-                    "content": r.get("content", ""),
-                    "query": search_query,
-                    "category": query_category,
-                }
+            candidate = {
+                "title": r.get("title", ""),
+                "url": url,
+                "content": r.get("content", ""),
+                "query": search_query,
+                "category": query_category,
+            }
+            published_date = (
+                r.get("published_date") or r.get("publishedDate") or r.get("published_at") or r.get("publishedAt")
             )
+            if published_date:
+                candidate["published_date"] = published_date
+            candidates.append(candidate)
 
     return candidates

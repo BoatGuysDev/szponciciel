@@ -3,11 +3,9 @@ from __future__ import annotations
 import json
 from typing import Literal, TypedDict
 
-from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
 from sqlmodel import Session
 
-from config import settings
 from db import get_engine
 from models import Run
 from nodes.researcher_node.scoring import compute_research_score
@@ -16,7 +14,8 @@ from nodes.researcher_node.tools import fetch_news_candidates
 from nodes.state import PersonaRunState
 from research_categories import NEWS_CATEGORY_IDS
 from services import ResearchAnalyticsService
-from utils.pipeline_log import agent_span, tool_span
+from utils.agent_utils import call_agent
+from utils.pipeline_log import tool_span
 
 SearchKind = Literal["exploit", "explore"]
 MIN_RESEARCH_ITERS = 5
@@ -72,11 +71,8 @@ def _plan_next_search(
     search_kind: SearchKind | None,
     iteration: int,
 ) -> _SearchPlan:
-    llm = ChatGoogleGenerativeAI(model=settings.llm_model)
-    structured = llm.with_structured_output(_SearchPlan)
     prompt = "\n\n".join(
         [
-            RESEARCHER_SYSTEM_PROMPT,
             f"Iteration: {iteration}",
             f"Required search kind: {search_kind or 'adaptive; choose exploit or explore'}",
             f"User requested topic, if any: {topic or 'none'}",
@@ -85,15 +81,7 @@ def _plan_next_search(
             "Return the next search query, one category, and search_kind.",
         ]
     )
-    with agent_span(
-        "researcher.plan_search",
-        model=settings.llm_model,
-        prompt=prompt,
-        response_format=_SearchPlan.__name__,
-        system_prompt=RESEARCHER_SYSTEM_PROMPT,
-    ) as call:
-        plan: _SearchPlan = structured.invoke(prompt)
-        call["output"] = plan
+    plan = call_agent(RESEARCHER_SYSTEM_PROMPT, _SearchPlan, prompt=prompt)
     category = plan.category.strip().lower()
     if category not in NEWS_CATEGORY_IDS:
         category = _fallback_category(analytics, search_kind or plan.search_kind or "exploit")
@@ -110,25 +98,14 @@ def _plan_next_search(
 
 def _assess_candidates_with_llm(candidates: list[dict], analytics: dict) -> list[_CandidateAssessment]:
     summary = _candidate_summary(candidates)
-    llm = ChatGoogleGenerativeAI(model=settings.llm_model)
-    structured = llm.with_structured_output(_CandidateAssessments)
     prompt = "\n\n".join(
         [
-            RESEARCHER_SYSTEM_PROMPT,
             f"Analytics summary: {_compact_json(analytics)}",
             f"Candidates:\n{summary}",
             "Return one assessment per candidate, referenced by zero-based index.",
         ]
     )
-    with agent_span(
-        "researcher.assess_candidates",
-        model=settings.llm_model,
-        prompt=prompt,
-        response_format=_CandidateAssessments.__name__,
-        system_prompt=RESEARCHER_SYSTEM_PROMPT,
-    ) as call:
-        result: _CandidateAssessments = structured.invoke(prompt)
-        call["output"] = result
+    result = call_agent(RESEARCHER_SYSTEM_PROMPT, _CandidateAssessments, prompt=prompt)
     return result.assessments
 
 
@@ -151,6 +128,8 @@ def _score_candidates(candidates: list[dict], analytics: dict) -> list[dict]:
             emotional_intensity=assessment.emotional_intensity,
             audience_breadth=assessment.audience_breadth,
             search_kind=candidate.get("search_kind") or "exploit",
+            published_at=candidate.get("published_at") or candidate.get("publishedAt"),
+            published_date=candidate.get("published_date") or candidate.get("publishedDate"),
         )
         scored.append(
             {
@@ -165,11 +144,8 @@ def _score_candidates(candidates: list[dict], analytics: dict) -> list[dict]:
 
 
 def _should_stop(*, best: dict, analytics: dict, iterations: int, exploit_count: int, explore_count: int) -> bool:
-    llm = ChatGoogleGenerativeAI(model=settings.llm_model)
-    structured = llm.with_structured_output(_ResearchStopDecision)
     prompt = "\n\n".join(
         [
-            RESEARCHER_SYSTEM_PROMPT,
             f"Iterations completed: {iterations}",
             f"Exploit searches completed: {exploit_count}",
             f"Explore searches completed: {explore_count}",
@@ -178,15 +154,7 @@ def _should_stop(*, best: dict, analytics: dict, iterations: int, exploit_count:
             "Decide whether the research goal is now satisfied.",
         ]
     )
-    with agent_span(
-        "researcher.stop_decision",
-        model=settings.llm_model,
-        prompt=prompt,
-        response_format=_ResearchStopDecision.__name__,
-        system_prompt=RESEARCHER_SYSTEM_PROMPT,
-    ) as call:
-        decision: _ResearchStopDecision = structured.invoke(prompt)
-        call["output"] = decision
+    decision = call_agent(RESEARCHER_SYSTEM_PROMPT, _ResearchStopDecision, prompt=prompt)
     return decision.should_stop
 
 
@@ -351,6 +319,7 @@ def _compact_best(best: dict) -> dict:
             "category_performance_score": best.get("category_performance_score"),
             "similar_topic_performance_score": best.get("similar_topic_performance_score"),
             "content_fit_score": best.get("content_fit_score"),
+            "recency_score": best.get("recency_score"),
             "exploration_bonus": best.get("exploration_bonus"),
         },
     }
