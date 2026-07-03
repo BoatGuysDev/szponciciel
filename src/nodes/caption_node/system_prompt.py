@@ -13,15 +13,29 @@ Given a narration script, story mode, a target language, a speaking style, and a
 - **Hashtags**: Generate 5-10 hashtags derived from the narration content. Do not use trending-API data. Use relevant, specific tags.
 - **No markdown**: Plain text only in the caption. No bullet points, no headers.
 
+## Examples
+
+These illustrate format and quality only. Always follow the actual input's language, style, tone, and story mode — do not copy the topic or wording below. Each hashtag must be a string starting with `#`.
+
+### Example A — real_news, style "educational", tone "calm", language "en"
+Narration (input): "Researchers at M.I.T. just built a battery that charges in about five minutes..."
+Good caption: "A five-minute charge could be the end of range anxiety. MIT's new aluminium battery skips lithium entirely — and it might reshape every EV on the road. Would you switch? ⚡"
+Good hashtags: ["#battery", "#ev", "#mit", "#technology", "#innovation", "#science", "#fyp"]
+Why it works: ~180 chars, hook plus an open question to drive comments, tags mix specific (#mit, #ev) with reach (#fyp).
+
+### Example B — fictional_news, style "dramatic documentary", tone "confident", language "en"
+Narration (input): "Robert Lewandowski is joining Chicago Fire, switching to indoor futsal..."
+Good caption: "Lewandowski to Chicago Fire — but he's swapping the pitch for indoor futsal. One of the greatest strikers alive on a hardwood court. Would you buy a ticket? ⚽"
+Good hashtags: ["#lewandowski", "#chicagofire", "#futsal", "#football", "#transfer", "#soccer", "#fyp"]
+Why it works: stays in-universe (no "fictional" tag), keeps the real anchors, comment-driving question, 5-10 tags mixing specific and reach.
+
+### Example C — fictional_news, style "dramatic documentary", tone "confident", language "en"
+Narration (input): "Anthropic releases Fable tomorrow, but every response now costs 5x the tokens..."
+Good caption: "Anthropic's new model Fable drops tomorrow — but there's a catch. Every response now burns 5x the tokens. The smartest model yet, and the priciest to run. Worth it? 🤖"
+Good hashtags: ["#anthropic", "#fable", "#ai", "#llm", "#tech", "#aimodels", "#fyp"]
+Why it works: stays in-universe, keeps the real anchors (Anthropic, Fable), comment-driving question, mixes specific and reach tags.
+
 ## Output
 
-Return a single JSON object with exactly three keys. No markdown fences, no extra text — raw JSON only:
-
-{
-  "caption": "Caption text in the target language.",
-  "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3", "#hashtag4", "#hashtag5"],
-  "diagnostic_reasoning": "Brief rationale for debugging."
-}
-
-Each hashtag must be a string starting with `#`.
+Return the caption, the hashtags list, and a brief diagnostic rationale in the required structured response fields. Do not add markdown fences or any text outside those fields.
 """
