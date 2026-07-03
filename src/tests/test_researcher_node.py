@@ -282,6 +282,7 @@ class TestResearcherNode(BaseTestClass):
 
         assert search_kinds == ["exploit", "exploit", "exploit", "explore", "explore"]
         assert stop.call_count == 1
+        assert researcher_module._next_search_kind(exploit_count=3, explore_count=2) is None
 
     def test_max_iteration_cutoff_when_agent_does_not_stop(self, graph: StateGraph, engine: Engine):
         run_id = _seed_run(engine)

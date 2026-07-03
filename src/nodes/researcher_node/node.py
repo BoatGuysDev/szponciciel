@@ -19,6 +19,7 @@ from research_categories import NEWS_CATEGORY_IDS
 from services import ResearchAnalyticsService
 from utils.pipeline_log import agent_span, tool_span
 
+SearchKind = Literal["exploit", "explore"]
 MIN_RESEARCH_ITERS = 5
 MAX_RESEARCH_ITERS = 8
 REQUIRED_EXPLOIT_SEARCHES = 3
@@ -40,6 +41,7 @@ class ResearcherResult(TypedDict, total=False):
 class _SearchPlan(BaseModel):
     query: str = Field(description="Concrete news search query.")
     category: str = Field(description="Lowercase news category for this query.")
+    search_kind: SearchKind | None = Field(default=None, description="Use exploit or explore for adaptive searches.")
     rationale: str
 
 
@@ -68,7 +70,7 @@ def _plan_next_search(
     analytics: dict,
     topic: str | None,
     previous_queries: list[str],
-    search_kind: Literal["exploit", "explore"],
+    search_kind: SearchKind | None,
     iteration: int,
 ) -> _SearchPlan:
     llm = ChatGoogleGenerativeAI(model=settings.llm_model)
@@ -77,11 +79,11 @@ def _plan_next_search(
         [
             RESEARCHER_SYSTEM_PROMPT,
             f"Iteration: {iteration}",
-            f"Required search kind: {search_kind}",
+            f"Required search kind: {search_kind or 'adaptive; choose exploit or explore'}",
             f"User requested topic, if any: {topic or 'none'}",
             f"Previous queries: {json.dumps(previous_queries, ensure_ascii=False)}",
             f"Analytics summary: {_compact_json(analytics)}",
-            "Return the next search query and one category.",
+            "Return the next search query, one category, and search_kind.",
         ]
     )
     with agent_span(
@@ -95,8 +97,16 @@ def _plan_next_search(
         call["output"] = plan
     category = plan.category.strip().lower()
     if category not in NEWS_CATEGORY_IDS:
-        category = _fallback_category(analytics, search_kind)
-    return _SearchPlan(query=plan.query.strip(), category=category, rationale=plan.rationale)
+        category = _fallback_category(analytics, search_kind or plan.search_kind or "exploit")
+    effective_search_kind = search_kind or plan.search_kind
+    if effective_search_kind not in {"exploit", "explore"}:
+        effective_search_kind = "exploit"
+    return _SearchPlan(
+        query=plan.query.strip(),
+        category=category,
+        search_kind=effective_search_kind,
+        rationale=plan.rationale,
+    )
 
 
 def _assess_candidates_with_llm(candidates: list[dict], analytics: dict) -> list[_CandidateAssessment]:
@@ -201,14 +211,15 @@ def researcher_node(state: PersonaRunState) -> ResearcherResult:
     explore_count = 0
 
     for iteration in range(1, MAX_RESEARCH_ITERS + 1):
-        search_kind = _next_search_kind(exploit_count=exploit_count, explore_count=explore_count)
+        requested_search_kind = _next_search_kind(exploit_count=exploit_count, explore_count=explore_count)
         plan = _plan_next_search(
             analytics=analytics,
             topic=state.get("topic"),
             previous_queries=previous_queries,
-            search_kind=search_kind,
+            search_kind=requested_search_kind,
             iteration=iteration,
         )
+        search_kind = plan.search_kind or requested_search_kind or "exploit"
         if search_kind == "exploit":
             exploit_count += 1
         else:
@@ -288,12 +299,12 @@ def researcher_node(state: PersonaRunState) -> ResearcherResult:
     }
 
 
-def _next_search_kind(*, exploit_count: int, explore_count: int) -> Literal["exploit", "explore"]:
+def _next_search_kind(*, exploit_count: int, explore_count: int) -> SearchKind | None:
     if exploit_count < REQUIRED_EXPLOIT_SEARCHES:
         return "exploit"
     if explore_count < REQUIRED_EXPLORE_SEARCHES:
         return "explore"
-    return "exploit"
+    return None
 
 
 def _can_stop(iteration: int, exploit_count: int, explore_count: int) -> bool:
