@@ -100,6 +100,9 @@ class TestUploadNode(BaseTestClass):
             "status": "running",
             "source_article_url": "https://example.com/news",
             "source_article_title": "Source headline",
+            "topic": "AI agents",
+            "news_category": "ai",
+            "research_query": "AI agents news",
             "base_script": "Stored base script.",
         }
         defaults.update(kwargs)
@@ -131,6 +134,9 @@ class TestUploadNode(BaseTestClass):
                 "app": "szponciciel",
                 "run": {
                     "id": "run-1",
+                    "topic": "AI agents",
+                    "news_category": "ai",
+                    "research_query": "AI agents news",
                     "source_article_url": "https://example.com/news",
                     "source_article_title": "Source headline",
                 },

@@ -4,39 +4,43 @@ from langchain_core.tools import tool
 from langchain_tavily import TavilySearch
 
 from logging_config import get_logger
+from research_categories import NEWS_CATEGORIES
 from utils.logging import log_exception
 from utils.pipeline_log import tool_span
 
 log = get_logger(__name__)
 
-CATEGORIES: list[tuple[str, str]] = [
-    ("AI", "latest artificial intelligence breakthroughs"),
-    ("Tech", "latest technology and startup news"),
-    ("Finance", "latest stock market and finance news"),
-    ("Politics", "latest politics and government news"),
-    ("World", "latest world and international news"),
-]
+CATEGORIES = NEWS_CATEGORIES
+_DEFAULT_QUERY_BY_CATEGORY = dict(NEWS_CATEGORIES)
 
 
 @tool
-def fetch_news_candidates(topic: str | None = None) -> list[dict]:
+def fetch_news_candidates(query: str | None = None, category: str | None = None) -> list[dict]:
     """Fetches recent news articles via Tavily and deduplicates them by URL.
 
-    If a topic is given, searches for that topic; otherwise sweeps the default
-    news categories. Returns a list of candidate dicts with keys: title, url, content.
+    If a query is given, searches for that query; otherwise sweeps the default
+    news categories. Returns candidate dicts with keys: title, url, content,
+    query, and category.
     """
     search = TavilySearch(max_results=5, topic="news", time_range="day")
-    queries = [topic] if topic else [query for _, query in CATEGORIES]
+    category = (category or "").strip().lower() or None
+    if query:
+        queries = [(category, query)]
+    elif category and category in _DEFAULT_QUERY_BY_CATEGORY:
+        queries = [(category, _DEFAULT_QUERY_BY_CATEGORY[category])]
+    else:
+        queries = CATEGORIES
+
     candidates: list[dict] = []
     seen_urls: set[str] = set()
 
-    for query in queries:
+    for query_category, search_query in queries:
         try:
-            with tool_span("tavily.search", input={"query": query}) as call:
-                response = search.invoke({"query": query})
+            with tool_span("tavily.search", input={"query": search_query, "category": query_category}) as call:
+                response = search.invoke({"query": search_query})
                 call["output"] = response
         except Exception as exc:
-            log_exception(log, "researcher.news_fetch_failed", exc, query=query)
+            log_exception(log, "researcher.news_fetch_failed", exc, query=search_query, category=query_category)
             continue
         articles = response.get("results", []) if isinstance(response, dict) else []
         for r in articles:
@@ -49,6 +53,8 @@ def fetch_news_candidates(topic: str | None = None) -> list[dict]:
                     "title": r.get("title", ""),
                     "url": url,
                     "content": r.get("content", ""),
+                    "query": search_query,
+                    "category": query_category,
                 }
             )
 

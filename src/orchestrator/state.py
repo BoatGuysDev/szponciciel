@@ -16,6 +16,8 @@ class OrchestratorState(TypedDict, total=False):
     source_article_url: str
     source_article_title: str
     source_article_content: str
+    news_category: str
+    research_query: str
     persona_ids: list[str]
     outcomes: list[PersonaOutcome]
     is_fatal_error: bool
