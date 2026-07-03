@@ -45,6 +45,6 @@ class PersonaRunState(TypedDict):
     video_category: str
     background_video_path: str
     output_video_path: str  # runs/{run_id}/{persona_id}/output.mp4
-    tiktok_post_id: str | None
+    zernio_post_id: str | None
     is_fatal_error: bool
     error_message: str | None

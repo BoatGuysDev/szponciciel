@@ -98,7 +98,7 @@ class TestUploadNode(BaseTestClass):
 
         assert result.get("is_fatal_error") is None
         assert result.get("error_message") is None
-        assert result.get("tiktok_post_id") == "post-123"
+        assert result.get("zernio_post_id") == "post-123"
         self.mock_client.media.get_media_presigned_url.assert_called_once()
         self.mock_put.assert_called_once()
 

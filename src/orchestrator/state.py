@@ -5,7 +5,7 @@ class PersonaOutcome(TypedDict, total=False):
     persona_id: str
     persona_run_id: str
     status: str  # "completed" | "failed"
-    tiktok_post_id: str | None
+    zernio_post_id: str | None
     error_message: str | None
 
 
