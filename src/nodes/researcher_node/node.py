@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Literal
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
