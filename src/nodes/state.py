@@ -33,6 +33,8 @@ class PersonaRunState(TypedDict):
     persona_id: str
     story_mode: Literal["real_news", "fictional_news"]
     topic: str | None
+    news_category: str | None
+    research_query: str | None
     video_strategy: Literal["stock", "ai"]
     source_article_url: str
     source_article_title: str

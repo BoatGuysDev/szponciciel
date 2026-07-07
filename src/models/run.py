@@ -9,6 +9,9 @@ class Run(SQLModel, table=True):
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     status: str  # "running" | "completed" | "failed"
+    topic: str | None = None
+    news_category: str | None = None
+    research_query: str | None = None
     source_article_url: str | None = None
     source_article_title: str | None = None
     base_script: str | None = None

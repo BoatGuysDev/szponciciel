@@ -29,6 +29,9 @@ def _build_zernio_metadata(state: PersonaRunState, run: Run, persona: Persona) -
         "app": "szponciciel",
         "run": {
             "id": state["run_id"],
+            "topic": run.topic or state.get("topic"),
+            "news_category": run.news_category or state.get("news_category"),
+            "research_query": run.research_query or state.get("research_query"),
             "source_article_url": run.source_article_url or state.get("source_article_url"),
             "source_article_title": run.source_article_title or state.get("source_article_title"),
         },
